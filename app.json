@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "Vekio",
+    "slug": "vekio",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "vekio",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vekio.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Vekio utilise la caméra pour scanner les codes-barres des produits alimentaires.",
+        "NSPhotoLibraryUsageDescription": "Vekio accède à vos photos pour ajouter des images à vos menus."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.vekio.app",
+      "permissions": ["CAMERA"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Vekio utilise la caméra pour scanner les codes-barres."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png"
+        }
+      ],
+      "expo-image-picker"
+    ]
+  }
+}
