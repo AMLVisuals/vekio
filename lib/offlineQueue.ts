@@ -1,5 +1,5 @@
 import NetInfo from '@react-native-community/netinfo';
-import { cache } from './cache';
+import { cacheGet, cacheSet } from './cache';
 
 interface QueuedAction {
   id: string;
@@ -12,18 +12,17 @@ interface QueuedAction {
 const QUEUE_KEY = 'offline-queue';
 
 /**
- * Recupere la file d'attente depuis MMKV
+ * Recupere la file d'attente depuis le cache
  */
 function getQueue(): QueuedAction[] {
-  const raw = cache.getString(QUEUE_KEY);
-  return raw ? JSON.parse(raw) : [];
+  return cacheGet<QueuedAction[]>(QUEUE_KEY) ?? [];
 }
 
 /**
- * Sauvegarde la file d'attente dans MMKV
+ * Sauvegarde la file d'attente dans le cache
  */
 function saveQueue(queue: QueuedAction[]): void {
-  cache.set(QUEUE_KEY, JSON.stringify(queue));
+  cacheSet(QUEUE_KEY, queue);
 }
 
 /**

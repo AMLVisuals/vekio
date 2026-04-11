@@ -1,30 +1,27 @@
 import { createClient } from '@supabase/supabase-js';
-import { MMKV } from 'react-native-mmkv';
 
-// @ts-expect-error MMKV is a JSI module, TS sees it as type-only in some configs
-const storage = new (MMKV as any)({ id: 'supabase-auth' }) as InstanceType<typeof MMKV>;
+// Stockage en memoire — compatible Expo Go
+// MMKV sera utilise dans le build de production
+const memoryStorage = new Map<string, string>();
 
-// Adaptateur de stockage pour Supabase Auth compatible MMKV
-const mmkvStorageAdapter = {
+const storageAdapter = {
   getItem: (key: string) => {
-    const value = storage.getString(key);
-    return value ?? null;
+    return memoryStorage.get(key) ?? null;
   },
   setItem: (key: string, value: string) => {
-    storage.set(key, value);
+    memoryStorage.set(key, value);
   },
   removeItem: (key: string) => {
-    storage.delete(key);
+    memoryStorage.delete(key);
   },
 };
 
-// TODO : remplacer par tes vraies valeurs Supabase
-const SUPABASE_URL = 'https://VOTRE_PROJET.supabase.co';
-const SUPABASE_ANON_KEY = 'VOTRE_CLE_ANON';
+const SUPABASE_URL = 'https://ejksceajiklhjpqdcpbi.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqa3NjZWFqaWtsaGpwcWRjcGJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4ODg0NjAsImV4cCI6MjA5MTQ2NDQ2MH0.wpgbGnEyZET672GSQ67f9__-n_ksrco_vhp4C0fuKSU';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    storage: mmkvStorageAdapter,
+    storage: storageAdapter,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,

@@ -1,6 +1,10 @@
 import { Tabs } from 'expo-router';
 import { useTheme } from 'react-native-paper';
-import { Platform } from 'react-native';
+import { Platform, Text } from 'react-native';
+
+function TabIcon({ label, focused, color }: { label: string; focused: boolean; color: string }) {
+  return <Text style={{ fontSize: 20, color }}>{label}</Text>;
+}
 
 export default function TabsLayout() {
   const theme = useTheme();
@@ -14,11 +18,9 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.outlineVariant,
-          paddingBottom: Platform.OS === 'ios' ? 20 : 8,
-          height: Platform.OS === 'ios' ? 88 : 64,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: '600',
         },
       }}
@@ -27,28 +29,35 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Dashboard',
-          tabBarIcon: () => null, // TODO Phase 3 : icones
+          tabBarIcon: ({ color, focused }) => <TabIcon label="◉" color={color} focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="journal"
         options={{
           title: 'Journal',
-          tabBarIcon: () => null,
+          tabBarIcon: ({ color, focused }) => <TabIcon label="📋" color={color} focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="historique"
+        options={{
+          title: 'Stats',
+          tabBarIcon: ({ color, focused }) => <TabIcon label="📊" color={color} focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="menus"
         options={{
           title: 'Menus',
-          tabBarIcon: () => null,
+          tabBarIcon: ({ color, focused }) => <TabIcon label="🍽" color={color} focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="profil"
         options={{
           title: 'Profil',
-          tabBarIcon: () => null,
+          tabBarIcon: ({ color, focused }) => <TabIcon label="👤" color={color} focused={focused} />,
         }}
       />
     </Tabs>
