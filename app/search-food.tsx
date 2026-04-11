@@ -3,7 +3,8 @@ import { View, StyleSheet, FlatList, Pressable } from 'react-native';
 import { Text, TextInput, Button, useTheme, ActivityIndicator } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { searchProducts, type NutritionData } from '../lib/openfoodfacts';
+import { type NutritionData } from '../lib/openfoodfacts';
+import { searchCiqual } from '../lib/ciqual';
 import { supabase } from '../lib/supabase';
 import type { MealType } from '../stores/journalStore';
 
@@ -54,7 +55,7 @@ export default function SearchFoodScreen() {
     setLoading(true);
     setSearched(true);
     try {
-      const data = await searchProducts(query.trim());
+      const data = searchCiqual(query.trim());
       setResults(data);
     } finally {
       setLoading(false);

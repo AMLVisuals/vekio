@@ -1,127 +1,186 @@
 import { useState } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable, ScrollView, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { Text, TextInput, Button, useTheme } from 'react-native-paper';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ScrollPicker from '../../components/ScrollPicker';
+
+// Generer les valeurs pour les pickers
+const AGES = Array.from({ length: 82 }, (_, i) => i + 14); // 14-95
+const POIDS = Array.from({ length: 161 }, (_, i) => i + 40); // 40-200
+const TAILLES = Array.from({ length: 81 }, (_, i) => i + 120); // 120-200
 
 export default function OnboardingMensurationsScreen() {
   const theme = useTheme();
   const params = useLocalSearchParams<{ objectif: string }>();
 
   const [nom, setNom] = useState('');
-  const [age, setAge] = useState('');
-  const [poids, setPoids] = useState('');
-  const [taille, setTaille] = useState('');
+  const [age, setAge] = useState(25);
+  const [poids, setPoids] = useState(70);
+  const [taille, setTaille] = useState(170);
   const [sexe, setSexe] = useState<'homme' | 'femme' | ''>('');
-
-  const isValid = nom && age && poids && taille && sexe;
+  const [step, setStep] = useState<'info' | 'age' | 'poids' | 'taille'>('info');
 
   const handleNext = () => {
-    router.push({
-      pathname: '/(auth)/onboarding-activite',
-      params: {
-        objectif: params.objectif,
-        nom,
-        age,
-        poids,
-        taille,
-        sexe,
-      },
-    });
+    if (step === 'info') {
+      if (!nom || !sexe) return;
+      setStep('age');
+    } else if (step === 'age') {
+      setStep('poids');
+    } else if (step === 'poids') {
+      setStep('taille');
+    } else {
+      router.push({
+        pathname: '/(auth)/onboarding-activite',
+        params: {
+          objectif: params.objectif,
+          nom,
+          age: String(age),
+          poids: String(poids),
+          taille: String(taille),
+          sexe,
+        },
+      });
+    }
   };
 
+  const canContinue = step === 'info' ? (nom && sexe) : true;
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.content}>
-        <Text variant="titleMedium" style={styles.step}>Étape 2/4</Text>
-        <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
-          Tes mensurations
-        </Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.content}>
+          <Text variant="titleMedium" style={styles.step}>Étape 2/4</Text>
 
-        <TextInput
-          label="Prénom"
-          value={nom}
-          onChangeText={setNom}
-          mode="outlined"
-          autoCapitalize="words"
-          style={styles.input}
-        />
+          {step === 'info' && (
+            <>
+              <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
+                Comment tu t'appelles ?
+              </Text>
 
-        <View style={styles.row}>
-          {(['homme', 'femme'] as const).map((s) => {
-            const isSelected = sexe === s;
-            return (
-              <Pressable
-                key={s}
-                onPress={() => setSexe(s)}
-                style={[
-                  styles.sexeOption,
-                  {
-                    borderColor: isSelected ? theme.colors.primary : theme.colors.outline,
-                    backgroundColor: isSelected ? theme.colors.primaryContainer : theme.colors.surface,
-                    flex: 1,
-                  },
-                ]}
-              >
-                <Text
-                  variant="titleMedium"
-                  style={{
-                    textAlign: 'center',
-                    color: isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
-                  }}
-                >
-                  {s === 'homme' ? 'Homme' : 'Femme'}
-                </Text>
-              </Pressable>
-            );
-          })}
+              <TextInput
+                label="Prénom"
+                value={nom}
+                onChangeText={setNom}
+                mode="outlined"
+                autoCapitalize="words"
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
+                style={styles.input}
+              />
+
+              <Text variant="titleMedium" style={[styles.subtitle, { color: theme.colors.onBackground }]}>
+                Tu es ?
+              </Text>
+
+              <View style={styles.row}>
+                {(['homme', 'femme'] as const).map((s) => {
+                  const isSelected = sexe === s;
+                  return (
+                    <Pressable
+                      key={s}
+                      onPress={() => setSexe(s)}
+                      style={[
+                        styles.sexeOption,
+                        {
+                          borderColor: isSelected ? theme.colors.primary : theme.colors.outline,
+                          backgroundColor: isSelected ? theme.colors.primaryContainer : theme.colors.surface,
+                          flex: 1,
+                        },
+                      ]}
+                    >
+                      <Text style={{ fontSize: 32, textAlign: 'center' }}>
+                        {s === 'homme' ? '👨' : '👩'}
+                      </Text>
+                      <Text
+                        variant="titleMedium"
+                        style={{
+                          textAlign: 'center',
+                          marginTop: 8,
+                          color: isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
+                        }}
+                      >
+                        {s === 'homme' ? 'Homme' : 'Femme'}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </>
+          )}
+
+          {step === 'age' && (
+            <>
+              <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
+                Quel âge as-tu ?
+              </Text>
+              <ScrollPicker
+                values={AGES}
+                selected={age}
+                onSelect={setAge}
+                unit="ans"
+                label="Âge"
+              />
+            </>
+          )}
+
+          {step === 'poids' && (
+            <>
+              <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
+                Quel est ton poids ?
+              </Text>
+              <ScrollPicker
+                values={POIDS}
+                selected={poids}
+                onSelect={setPoids}
+                unit="kg"
+                label="Poids"
+              />
+            </>
+          )}
+
+          {step === 'taille' && (
+            <>
+              <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
+                Quelle est ta taille ?
+              </Text>
+              <ScrollPicker
+                values={TAILLES}
+                selected={taille}
+                onSelect={setTaille}
+                unit="cm"
+                label="Taille"
+              />
+            </>
+          )}
         </View>
 
-        <TextInput
-          label="Âge"
-          value={age}
-          onChangeText={setAge}
-          mode="outlined"
-          keyboardType="numeric"
-          right={<TextInput.Affix text="ans" />}
-          style={styles.input}
-        />
-
-        <View style={styles.row}>
-          <TextInput
-            label="Poids"
-            value={poids}
-            onChangeText={setPoids}
-            mode="outlined"
-            keyboardType="decimal-pad"
-            right={<TextInput.Affix text="kg" />}
-            style={[styles.input, { flex: 1 }]}
-          />
-          <View style={{ width: 12 }} />
-          <TextInput
-            label="Taille"
-            value={taille}
-            onChangeText={setTaille}
-            mode="outlined"
-            keyboardType="numeric"
-            right={<TextInput.Affix text="cm" />}
-            style={[styles.input, { flex: 1 }]}
-          />
+        <View style={styles.footer}>
+          {step !== 'info' && (
+            <Button
+              mode="text"
+              onPress={() => {
+                if (step === 'age') setStep('info');
+                else if (step === 'poids') setStep('age');
+                else if (step === 'taille') setStep('poids');
+              }}
+              style={{ marginBottom: 8 }}
+            >
+              Retour
+            </Button>
+          )}
+          <Button
+            mode="contained"
+            onPress={handleNext}
+            disabled={!canContinue}
+            style={styles.button}
+            contentStyle={styles.buttonContent}
+          >
+            Suivant
+          </Button>
         </View>
-      </View>
-
-      <View style={styles.footer}>
-        <Button
-          mode="contained"
-          onPress={handleNext}
-          disabled={!isValid}
-          style={styles.button}
-          contentStyle={styles.buttonContent}
-        >
-          Suivant
-        </Button>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -142,8 +201,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 32,
   },
-  input: {
+  subtitle: {
+    fontWeight: '600',
+    marginTop: 16,
     marginBottom: 16,
+  },
+  input: {
+    marginBottom: 8,
   },
   row: {
     flexDirection: 'row',
@@ -151,8 +215,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sexeOption: {
-    padding: 16,
-    borderRadius: 12,
+    padding: 20,
+    borderRadius: 16,
     borderWidth: 2,
   },
   footer: {

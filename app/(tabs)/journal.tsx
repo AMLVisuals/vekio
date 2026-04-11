@@ -108,8 +108,13 @@ function MealSection({ meal, entries }: { meal: MealType; entries: JournalEntry[
             <View style={{ flex: 1 }}>
               <Text variant="bodyMedium" numberOfLines={1}>{entry.nom}</Text>
               <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                {entry.quantite_g}g — {Math.round(entry.calories)} kcal | P {entry.proteines}g | G {entry.glucides}g | L {entry.lipides}g
+                {entry.quantite_g}g — {Math.round(entry.calories)} kcal
               </Text>
+              <View style={styles.entryMacros}>
+                <Text variant="bodySmall" style={{ color: '#4CAF50', fontWeight: '600' }}>P {entry.proteines}g</Text>
+                <Text variant="bodySmall" style={{ color: '#FF9800', fontWeight: '600' }}>G {entry.glucides}g</Text>
+                <Text variant="bodySmall" style={{ color: '#2196F3', fontWeight: '600' }}>L {entry.lipides}g</Text>
+              </View>
             </View>
             <IconButton
               icon="close"
@@ -188,5 +193,10 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     marginTop: 10,
     borderTopWidth: 1,
+  },
+  entryMacros: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 2,
   },
 });
