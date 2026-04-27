@@ -1,0 +1,402 @@
+[
+  {
+    "avant": "Dessert (aliment moyen)",
+    "apres": "Dessert",
+    "transforme": false
+  },
+  {
+    "avant": "Salade de thon et légumes, appertisée",
+    "apres": "Salade de thon et légumes",
+    "transforme": true
+  },
+  {
+    "avant": "Salade composée avec viande ou poisson, appertisée",
+    "apres": "Salade composée avec viande ou poisson",
+    "transforme": true
+  },
+  {
+    "avant": "Champignons à la grecque, appertisés",
+    "apres": "Champignons à la grecque",
+    "transforme": true
+  },
+  {
+    "avant": "Salade de pommes de terre, fait maison",
+    "apres": "Salade de pommes de terre",
+    "transforme": false
+  },
+  {
+    "avant": "Taboulé ou Salade de couscous, préemballé",
+    "apres": "Taboulé ou Salade de couscous",
+    "transforme": true
+  },
+  {
+    "avant": "Salade de pomme de terre à la piémontaise, préemballée",
+    "apres": "Salade de pomme de terre à la piémontaise",
+    "transforme": true
+  },
+  {
+    "avant": "Salade de riz, appertisée",
+    "apres": "Salade de riz",
+    "transforme": true
+  },
+  {
+    "avant": "Crudité, sans assaisonnement (aliment moyen)",
+    "apres": "Crudité, sans assaisonnement",
+    "transforme": false
+  },
+  {
+    "avant": "Salade de pâtes aux légumes, avec poisson ou viande, préemballée",
+    "apres": "Salade de pâtes aux légumes, avec poisson ou viande",
+    "transforme": true
+  },
+  {
+    "avant": "Macédoine de légumes en salade, avec sauce, préemballée",
+    "apres": "Macédoine de légumes en salade, avec sauce",
+    "transforme": true
+  },
+  {
+    "avant": "Salade César au poulet (salade verte, fromage, croûtons, sauce), préemballée",
+    "apres": "Salade César au poulet",
+    "transforme": true
+  },
+  {
+    "avant": "Salade végétale à base de boulgour et/ou quinoa et légumes, préemballée",
+    "apres": "Salade végétale à base de boulgour ou quinoa et légumes",
+    "transforme": true
+  },
+  {
+    "avant": "Carottes râpées, avec sauce, préemballées",
+    "apres": "Carottes râpées, avec sauce",
+    "transforme": true
+  },
+  {
+    "avant": "Salade de betterave, avec sauce, préemballée",
+    "apres": "Salade de betterave, avec sauce",
+    "transforme": true
+  },
+  {
+    "avant": "Salade de chou ou Coleslaw, avec sauce, préemballée",
+    "apres": "Salade de chou ou Coleslaw, avec sauce",
+    "transforme": true
+  },
+  {
+    "avant": "Salade de concombre à la crème/fromage blanc, préemballée",
+    "apres": "Salade de concombre au fromage blanc",
+    "transforme": true
+  },
+  {
+    "avant": "Salade de lentilles et saucisse fumée, préemballée",
+    "apres": "Salade de lentilles et saucisse fumée",
+    "transforme": true
+  },
+  {
+    "avant": "Salade grecque, avec sauce, préemballée",
+    "apres": "Salade grecque, avec sauce",
+    "transforme": true
+  },
+  {
+    "avant": "Salade de riz à la niçoise, avec sauce, préemballée",
+    "apres": "Salade de riz à la niçoise, avec sauce",
+    "transforme": true
+  },
+  {
+    "avant": "Taboulé ou Salade de couscous au poulet, préemballé",
+    "apres": "Taboulé ou Salade de couscous au poulet",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe aux lentilles, préemballée à réchauffer",
+    "apres": "Soupe aux lentilles",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe à la volaille et aux légumes, préemballée à réchauffer",
+    "apres": "Soupe à la volaille et aux légumes",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe aux légumes variés, préemballée à réchauffer",
+    "apres": "Soupe aux légumes variés",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe de poissons et / ou crustacés, préemballée à réchauffer",
+    "apres": "Soupe de poissons ou crustacés",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe aux légumes variés, déshydratée reconstituée",
+    "apres": "Soupe aux légumes variés",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe aux poireaux et pommes de terre, préemballée à réchauffer",
+    "apres": "Soupe aux poireaux et pommes de terre",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe à la volaille et aux vermicelles, préemballée à réchauffer",
+    "apres": "Soupe à la volaille et aux vermicelles",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe à l'oignon, préemballée à réchauffer",
+    "apres": "Soupe à l'oignon",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe aux champignons, préemballée à réchauffer",
+    "apres": "Soupe aux champignons",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe à la carotte, préemballée à réchauffer",
+    "apres": "Soupe à la carotte",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe à la tomate, préemballée à réchauffer",
+    "apres": "Soupe à la tomate",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe minestrone, préemballée à réchauffer",
+    "apres": "Soupe minestrone",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe au pistou, déshydratée reconstituée",
+    "apres": "Soupe au pistou",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe de poissons et / ou crustacés, déshydratée reconstituée",
+    "apres": "Soupe de poissons ou crustacés",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe asiatique, avec pâtes, déshydratée reconstituée",
+    "apres": "Soupe asiatique, avec pâtes",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe marocaine, déshydratée reconstituée",
+    "apres": "Soupe marocaine",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe aux poireaux et pommes de terre, déshydratée reconstituée",
+    "apres": "Soupe aux poireaux et pommes de terre",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe à la volaille et aux légumes, déshydratée reconstituée",
+    "apres": "Soupe à la volaille et aux légumes",
+    "transforme": true
+  },
+  {
+    "avant": "Bouillon de boeuf, déshydraté reconstitué",
+    "apres": "Bouillon de boeuf",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe aux asperges, déshydratée reconstituée",
+    "apres": "Soupe aux asperges",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe à la tomate et aux vermicelles, préemballée à réchauffer",
+    "apres": "Soupe à la tomate et aux vermicelles",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe aux céréales et aux légumes, déshydratée reconstituée",
+    "apres": "Soupe aux céréales et aux légumes",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe à la tomate, déshydratée reconstituée",
+    "apres": "Soupe à la tomate",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe aux champignons, déshydratée reconstituée",
+    "apres": "Soupe aux champignons",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe à l'oignon, déshydratée reconstituée",
+    "apres": "Soupe à l'oignon",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe au potiron, préemballée à réchauffer",
+    "apres": "Soupe au potiron",
+    "transforme": true
+  },
+  {
+    "avant": "Bouillon de volaille, déshydraté reconstitué",
+    "apres": "Bouillon de volaille",
+    "transforme": true
+  },
+  {
+    "avant": "Bouillon de légumes, déshydraté reconstitué",
+    "apres": "Bouillon de légumes",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe à la tomate et aux vermicelles, déshydratée reconstituée",
+    "apres": "Soupe à la tomate et aux vermicelles",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe à la volaille et aux vermicelles, déshydratée reconstituée",
+    "apres": "Soupe à la volaille et aux vermicelles",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe au pistou, préemballée à réchauffer",
+    "apres": "Soupe au pistou",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe au potiron, déshydratée reconstituée",
+    "apres": "Soupe au potiron",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe asiatique, avec pâtes, préemballée à réchauffer",
+    "apres": "Soupe asiatique, avec pâtes",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe minestrone, déshydratée reconstituée",
+    "apres": "Soupe minestrone",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe au cresson, déshydratée reconstituée",
+    "apres": "Soupe au cresson",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe au cresson, préemballée à réchauffer",
+    "apres": "Soupe au cresson",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe aux légumes avec fromage, préemballée à réchauffer",
+    "apres": "Soupe aux légumes avec fromage",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe aux légumes verts, préemballée à réchauffer",
+    "apres": "Soupe aux légumes verts",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe aux légumes verts, déshydratée reconstituée",
+    "apres": "Soupe aux légumes verts",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe aux pois cassés, préemballée à réchauffer",
+    "apres": "Soupe aux pois cassés",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe froide type Gaspacho ou Gazpacho, préemballée",
+    "apres": "Soupe froide type Gaspacho ou Gazpacho",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe aux asperges, préemballée à réchauffer",
+    "apres": "Soupe aux asperges",
+    "transforme": true
+  },
+  {
+    "avant": "Soupe (aliment moyen)",
+    "apres": "Soupe",
+    "transforme": false
+  },
+  {
+    "avant": "Soupe miso, déshydratée reconstituée",
+    "apres": "Soupe miso",
+    "transforme": true
+  },
+  {
+    "avant": "Tripes à la mode de Caen, préemballées",
+    "apres": "Tripes à la mode de Caen",
+    "transforme": true
+  },
+  {
+    "avant": "Sauté d'agneau au curry, préemballé",
+    "apres": "Sauté d'agneau au curry",
+    "transforme": true
+  },
+  {
+    "avant": "Canard en sauce (poivre vert, chasseur, etc.), préemballé",
+    "apres": "Canard en sauce",
+    "transforme": true
+  },
+  {
+    "avant": "Lapin à la moutarde, préemballé",
+    "apres": "Lapin à la moutarde",
+    "transforme": true
+  },
+  {
+    "avant": "Viande en sauce (aliment moyen)",
+    "apres": "Viande en sauce",
+    "transforme": false
+  },
+  {
+    "avant": "Meloukhia, plat à base de boeuf et corete, fait maison",
+    "apres": "Meloukhia, plat à base de boeuf et corete",
+    "transforme": false
+  },
+  {
+    "avant": "Palette à la diable, préemballée",
+    "apres": "Palette à la diable",
+    "transforme": true
+  },
+  {
+    "avant": "Langue de boeuf sauce madère, préemballée",
+    "apres": "Langue de boeuf sauce madère",
+    "transforme": true
+  },
+  {
+    "avant": "Porc au caramel, préemballé",
+    "apres": "Porc au caramel",
+    "transforme": true
+  },
+  {
+    "avant": "Boulettes au boeuf, à la sauce tomate, préemballées",
+    "apres": "Boulettes au boeuf, à la sauce tomate",
+    "transforme": true
+  },
+  {
+    "avant": "Paupiette de veau, préemballée,  cuite au four",
+    "apres": "Paupiette de veau, cuite au four",
+    "transforme": true
+  },
+  {
+    "avant": "Yakitori (brochettes japonaises grillées en sauce)",
+    "apres": "Yakitori",
+    "transforme": false
+  },
+  {
+    "avant": "Hachis parmentier à la viande, préemballé",
+    "apres": "Hachis parmentier à la viande",
+    "transforme": true
+  },
+  {
+    "avant": "Couscous à la viande ou au poulet, préemballé, allégé",
+    "apres": "Couscous à la viande ou au poulet, allégé",
+    "transforme": true
+  },
+  {
+    "avant": "Poêlée de pommes de terre préfrites, lardons ou poulet, et autres, sans légumes verts, préemballée",
+    "apres": "Poêlée de pommes de terre préfrites, lardons ou poulet, et autres, sans légumes verts",
+    "transforme": true
+  }
+]

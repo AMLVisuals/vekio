@@ -1,0 +1,1002 @@
+[
+  {
+    "code": "ciq-19120",
+    "nom_actuel": "Boisson lactée aromatisée (arôme inconnu), sucrée, au lait partiellement écrémé, enrichie ou restaurée en vitamines ou minéraux",
+    "longueur": 127
+  },
+  {
+    "code": "ciq-19122",
+    "nom_actuel": "Boisson lactée aromatisée au chocolat, sucrée, au lait partiellement écrémé, enrichie ou restaurée en vitamines ou minéraux",
+    "longueur": 123
+  },
+  {
+    "code": "ciq-18057",
+    "nom_actuel": "Boisson préparée à partir de boisson concentrée à diluer, non sucrée, avec édulcorants, type \"sirop 0%\", diluée dans l'eau",
+    "longueur": 122
+  },
+  {
+    "code": "ciq-19500",
+    "nom_actuel": "Boisson lactée, lait fermenté ou yaourt à boire, aromatisé, avec édulcorants, allégé en sucres, 0% MG, au L Casei",
+    "longueur": 113
+  },
+  {
+    "code": "ciq-20297",
+    "nom_actuel": "Chayote ou christophine ou chouchou, pulpe avec pépins, cuite à la vapeur, prélevée à La Réunion (Sechium edule)",
+    "longueur": 112
+  },
+  {
+    "code": "ciq-13201",
+    "nom_actuel": "Ananas Victoria ou ananas Queen Victoria, pulpe crue, prélevé à La Réunion Ananas comosus (L.) merr var. Queen)",
+    "longueur": 111
+  },
+  {
+    "code": "ciq-20296",
+    "nom_actuel": "Brèdes chou de Chine ou bok choy ou pak choï, tiges et feuilles, cuites à la vapeur, prélevées à La Réunion",
+    "longueur": 107
+  },
+  {
+    "code": "ciq-19543",
+    "nom_actuel": "Lait fermenté ou spécialité laitière type yaourt, aux fruits, 0% MG, avec édulcorants, aux esters de stérol",
+    "longueur": 107
+  },
+  {
+    "code": "ciq-12315",
+    "nom_actuel": "Spécialité fromagère non affinée environ 25% MG, type fromage en barquette à tartiner ou coque fromagère",
+    "longueur": 104
+  },
+  {
+    "code": "ciq-12340",
+    "nom_actuel": "Spécialité fromagère non affinée environ 20% MG, type fromage en barquette à tartiner ou coque fromagère",
+    "longueur": 104
+  },
+  {
+    "code": "ciq-19665",
+    "nom_actuel": "Mousse de fromage blanc sur lit de fruits, 0% MG, avec édulcorants, enrichie en calcium et vitamine D",
+    "longueur": 101
+  },
+  {
+    "code": "ciq-19127",
+    "nom_actuel": "Boisson lactée aromatisée à la fraise, sucrée, au lait partiellement écrémé, enrichie à la vitamine D",
+    "longueur": 101
+  },
+  {
+    "code": "ciq-12012",
+    "nom_actuel": "Fromage rond à pâte molle et croûte fleurie environ 11% MG type coulommiers allégé en matière grasse",
+    "longueur": 100
+  },
+  {
+    "code": "ciq-16742",
+    "nom_actuel": "Matière grasse végétale (type margarine) à 30-40% MG, légère, demi-sel, aux esters de stérol végétal",
+    "longueur": 100
+  },
+  {
+    "code": "ciq-19667",
+    "nom_actuel": "Fromage frais type petit suisse, aromatisé ou aux fruits, 2-3% MG, enrichi en calcium et vitamine D",
+    "longueur": 99
+  },
+  {
+    "code": "ciq-19668",
+    "nom_actuel": "Fromage blanc ou spécialité laitière, aux fruits, avec édulcorants, allégé en sucres, 3% MG environ",
+    "longueur": 99
+  },
+  {
+    "code": "ciq-19530",
+    "nom_actuel": "Spécialité fromagère non affinée à tartiner environ 30-40 % MG aromatisée (ex: ail et fines herbes)",
+    "longueur": 99
+  },
+  {
+    "code": "ciq-19541",
+    "nom_actuel": "Lait fermenté ou spécialité laitière type yaourt, aux fruits, avec édulcorants, 0% MG, au bifidus",
+    "longueur": 97
+  },
+  {
+    "code": "ciq-12013",
+    "nom_actuel": "Fromage rond à pâte molle et croûte fleurie environ 5% MG type camembert allégé en matière grasse",
+    "longueur": 97
+  },
+  {
+    "code": "ciq-12051",
+    "nom_actuel": "Mont d'or ou Vacherin du Haut-Doubs (produit en France) ou Vacherin-Mont d'Or (produit en Suisse)",
+    "longueur": 97
+  },
+  {
+    "code": "ciq-16736",
+    "nom_actuel": "Matière grasse végétale (type margarine), à tartiner, à 30-40% MG, légère, doux, riche en oméga 3",
+    "longueur": 97
+  },
+  {
+    "code": "ciq-16739",
+    "nom_actuel": "Matière grasse végétale (type margarine) à 50-63% MG, allégée, doux, aux esters de stérol végétal",
+    "longueur": 97
+  },
+  {
+    "code": "ciq-19677",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière, aromatisé ou aux fruits, sucré, non allégé en MG",
+    "longueur": 94
+  },
+  {
+    "code": "ciq-12009",
+    "nom_actuel": "Fromage rond à pâte molle et croûte fleurie 5 à 11% MG type camembert allégé en matière grasse",
+    "longueur": 94
+  },
+  {
+    "code": "ciq-4019",
+    "nom_actuel": "Pomme de terre, purée à base de flocons, reconstituée avec lait demi-écrémé et eau, non salée",
+    "longueur": 93
+  },
+  {
+    "code": "ciq-18058",
+    "nom_actuel": "Boisson préparée à partir de sirop à diluer type menthe, fraise, etc, sucré, dilué dans l'eau",
+    "longueur": 93
+  },
+  {
+    "code": "ciq-13202",
+    "nom_actuel": "Papaye Colombo (fruit mûr), pulpe sans pépin, crue, prélevée à La Réunion (Carica papaya L.)",
+    "longueur": 92
+  },
+  {
+    "code": "ciq-19655",
+    "nom_actuel": "Fromage blanc ou spécialité laitière, aux fruits, avec édulcorants, allégé en sucres, 0% MG",
+    "longueur": 91
+  },
+  {
+    "code": "ciq-5011",
+    "nom_actuel": "Bière \"de spécialités\" ou d'abbaye, régionales ou d'une brasserie (degré d'alcool variable)",
+    "longueur": 91
+  },
+  {
+    "code": "ciq-18106",
+    "nom_actuel": "Boisson cacaotée ou au chocolat, instantanée, sucrée, enrichie en vitamines, prête à boire",
+    "longueur": 90
+  },
+  {
+    "code": "ciq-12814",
+    "nom_actuel": "Fromage de chèvre à pâte molle non pressée non cuite croûte naturelle, au lait pasteurisé",
+    "longueur": 89
+  },
+  {
+    "code": "ciq-16725",
+    "nom_actuel": "Matière grasse végétale (type margarine), teneur réduite en matière grasse inconnue, doux",
+    "longueur": 89
+  },
+  {
+    "code": "ciq-16740",
+    "nom_actuel": "Matière grasse végétale (type margarine) à 50-63% MG, allégée, demi-sel, riche en oméga 3",
+    "longueur": 89
+  },
+  {
+    "code": "ciq-19580",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière, aux copeaux de chocolat, à la crème, sucré",
+    "longueur": 88
+  },
+  {
+    "code": "ciq-4038",
+    "nom_actuel": "Chips de pommes de terre et assimilés nature ou aromatisées, allégées en matière grasse",
+    "longueur": 87
+  },
+  {
+    "code": "ciq-6260",
+    "nom_actuel": "Haché à base de boeuf ou Préparation de viande hachée de boeuf, 15% MG, cru, prémeballé",
+    "longueur": 87
+  },
+  {
+    "code": "ciq-19672",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière, aromatisé ou aux fruits, non allégé en MG",
+    "longueur": 87
+  },
+  {
+    "code": "ciq-19675",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière, aromatisé ou aux fruits, avec édulcorants",
+    "longueur": 87
+  },
+  {
+    "code": "ciq-42005",
+    "nom_actuel": "Substitut de repas hypocalorique, poudre reconstituée avec lait écrémé, type milk-shake",
+    "longueur": 87
+  },
+  {
+    "code": "ciq-4017",
+    "nom_actuel": "Pomme de terre, purée à base de flocons, reconstituée avec lait entier, matière grasse",
+    "longueur": 86
+  },
+  {
+    "code": "ciq-19548",
+    "nom_actuel": "Lait fermenté ou spécialité laitière type yaourt, sur lit de fruits, sucré, au bifidus",
+    "longueur": 86
+  },
+  {
+    "code": "ciq-19662",
+    "nom_actuel": "Fromage frais type petit suisse, aux fruits, 2-3% MG, enrichi en calcium et vitamine D",
+    "longueur": 86
+  },
+  {
+    "code": "ciq-25057",
+    "nom_actuel": "Poêlée de pommes de terre préfrites, lardons ou poulet, et autres, sans légumes verts",
+    "longueur": 85
+  },
+  {
+    "code": "ciq-20274",
+    "nom_actuel": "Poêlée de légumes assaisonnés grillée, méridionale ou méditerranéenne, surgelée, crue",
+    "longueur": 85
+  },
+  {
+    "code": "ciq-19402",
+    "nom_actuel": "Crème de lait ou spécialité à base de crème légère, teneur en matière grasse inconnue",
+    "longueur": 85
+  },
+  {
+    "code": "ciq-16737",
+    "nom_actuel": "Matière grasse végétale (type margarine) à 50-63% MG, allégée, doux, riche en oméga 3",
+    "longueur": 85
+  },
+  {
+    "code": "ciq-25154",
+    "nom_actuel": "Gratin de poisson et purée ou brandade aux pommes de terre ou parmentier de poisson",
+    "longueur": 83
+  },
+  {
+    "code": "ciq-13424",
+    "nom_actuel": "Jus de prune de cythère verte \"naine\" (variété hybride), fruit vert, pur jus filtré",
+    "longueur": 83
+  },
+  {
+    "code": "ciq-19654",
+    "nom_actuel": "Fromage blanc ou spécialité laitière, aux copeaux de chocolat, sucré, 7% MG environ",
+    "longueur": 83
+  },
+  {
+    "code": "ciq-18059",
+    "nom_actuel": "Boisson concentrée à diluer, sans sucres ajoutés, avec édulcorants, type \"sirop 0%\"",
+    "longueur": 83
+  },
+  {
+    "code": "ciq-23939",
+    "nom_actuel": "Gâteau moelleux fourré au chocolat ou aux pépites de chocolat ou au lait, prémballé",
+    "longueur": 83
+  },
+  {
+    "code": "ciq-16734",
+    "nom_actuel": "Matière grasse végétale (type margarine), à tartiner, à 30-40% MG, légère, demi-sel",
+    "longueur": 83
+  },
+  {
+    "code": "ciq-13423",
+    "nom_actuel": "Jus de prune de cythère verte \"naine\" (variété hybride), fruit mûr, pur jus filtré",
+    "longueur": 82
+  },
+  {
+    "code": "ciq-19658",
+    "nom_actuel": "Fromage blanc ou spécialité laitière, aux fruits, sucré, 3% MG environ, au bifidus",
+    "longueur": 82
+  },
+  {
+    "code": "ciq-18151",
+    "nom_actuel": "Café au lait, café crème ou cappuccino, instantané ou non, non sucré, prêt à boire",
+    "longueur": 82
+  },
+  {
+    "code": "ciq-19581",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière, aux fruits, avec édulcorants, 0% MG",
+    "longueur": 81
+  },
+  {
+    "code": "ciq-19582",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière, aux fruits, avec édulcorants, 0% MG",
+    "longueur": 81
+  },
+  {
+    "code": "ciq-19653",
+    "nom_actuel": "Fromage blanc ou spécialité laitière, aromatisé, sucré, 3% MG environ, au bifidus",
+    "longueur": 81
+  },
+  {
+    "code": "ciq-12116",
+    "nom_actuel": "Fromage à pate pressée cuite type emmental ou emmenthal, allégé en matière grasse",
+    "longueur": 81
+  },
+  {
+    "code": "ciq-16654",
+    "nom_actuel": "Matière grasse végétale (type margarine) à 60% de MG, allégée, au tournesol, doux",
+    "longueur": 81
+  },
+  {
+    "code": "ciq-19559",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière, aromatisé, avec édulcorants, 0% MG",
+    "longueur": 80
+  },
+  {
+    "code": "ciq-19659",
+    "nom_actuel": "Fromage blanc ou spécialité laitière, aux fruits, sucré, gourmand, 7% MG environ",
+    "longueur": 80
+  },
+  {
+    "code": "ciq-12802",
+    "nom_actuel": "Fromage de chèvre lactique affiné, au lait pasteurisé (type bûchette ou crottin)",
+    "longueur": 80
+  },
+  {
+    "code": "ciq-18340",
+    "nom_actuel": "Boisson gazeuse aux fruits (à moins de 10% de jus), non sucrée, avec édulcorants",
+    "longueur": 80
+  },
+  {
+    "code": "ciq-23941",
+    "nom_actuel": "Gâteau moelleux fourré aux fruits type mini-roulé ou mini-cake fourré, prémballé",
+    "longueur": 80
+  },
+  {
+    "code": "ciq-16719",
+    "nom_actuel": "Matière grasse végétale (type margarine), teneur en matière grasse inconue, doux",
+    "longueur": 80
+  },
+  {
+    "code": "ciq-19542",
+    "nom_actuel": "Lait fermenté ou spécialité laitière type yaourt, aux fruits, sucré, au bifidus",
+    "longueur": 79
+  },
+  {
+    "code": "ciq-18021",
+    "nom_actuel": "Boisson plate aux fruits, (à moins de 10% de jus), non sucrée, avec édulcorants",
+    "longueur": 79
+  },
+  {
+    "code": "ciq-18030",
+    "nom_actuel": "Boisson à l'eau minérale ou de source, aromatisée, non sucrée, avec édulcorants",
+    "longueur": 79
+  },
+  {
+    "code": "ciq-18345",
+    "nom_actuel": "Boisson gazeuse aux fruits (à moins de 10% de jus), non sucrée, sans édulcorant",
+    "longueur": 79
+  },
+  {
+    "code": "ciq-23821",
+    "nom_actuel": "Crêpe fourrée au chocolat ou à la pâte à tartiner chocolat et noisettes, maison",
+    "longueur": 79
+  },
+  {
+    "code": "ciq-16733",
+    "nom_actuel": "Matière grasse végétale (type margarine), à tartiner, à 30-40% MG, légère, doux",
+    "longueur": 79
+  },
+  {
+    "code": "ciq-20273",
+    "nom_actuel": "Poêlée de légumes assaisonnés à l'asiatiques ou wok de légumes, surgelée, crue",
+    "longueur": 78
+  },
+  {
+    "code": "ciq-26210",
+    "nom_actuel": "Sébaste du nord, ou grand sébaste, ou dorade sébaste, ou daurade sébaste, crue",
+    "longueur": 78
+  },
+  {
+    "code": "ciq-19539",
+    "nom_actuel": "Lait fermenté ou spécialité laitière type yaourt, aromatisé, sucré, au bifidus",
+    "longueur": 78
+  },
+  {
+    "code": "ciq-18028",
+    "nom_actuel": "Boisson à l'eau minérale ou de source, aromatisée, non sucrée, sans édulcorant",
+    "longueur": 78
+  },
+  {
+    "code": "ciq-20996",
+    "nom_actuel": "Lichen de mer ou pioca ou goémon rouge (Chondrus crispus), séché ou déshydraté",
+    "longueur": 78
+  },
+  {
+    "code": "ciq-13171",
+    "nom_actuel": "Boisson infantile lactées aux fruits pour le goûter dès 4 mois (sans céréales)",
+    "longueur": 78
+  },
+  {
+    "code": "ciq-19516",
+    "nom_actuel": "Boisson lactée, lait fermenté ou yaourt à boire, aromatisé, sucré, au L Casei",
+    "longueur": 77
+  },
+  {
+    "code": "ciq-19669",
+    "nom_actuel": "Spécialité laitière type encas, riche en protéines, sur lit de fruits, sucrée",
+    "longueur": 77
+  },
+  {
+    "code": "ciq-18051",
+    "nom_actuel": "Boisson gazeuse aux fruits (de 10 à 50% de jus), non sucrée, avec édulcorants",
+    "longueur": 77
+  },
+  {
+    "code": "ciq-4025",
+    "nom_actuel": "Potatoes ou Wedges ou Quartiers de pommes de terre épicés, surgelées, cuites",
+    "longueur": 76
+  },
+  {
+    "code": "ciq-19671",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière, aromatisé ou aux fruits, 0% MG",
+    "longueur": 76
+  },
+  {
+    "code": "ciq-19676",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière, aromatisé ou aux fruits, sucré",
+    "longueur": 76
+  },
+  {
+    "code": "ciq-19650",
+    "nom_actuel": "Fromage blanc ou spécialité laitière nature et crème fouetté, 10% MG environ",
+    "longueur": 76
+  },
+  {
+    "code": "ciq-18033",
+    "nom_actuel": "Boisson gazeuse aux fruits (à moins de 10% de jus), sucrée, avec édulcorants",
+    "longueur": 76
+  },
+  {
+    "code": "ciq-19544",
+    "nom_actuel": "Lait fermenté ou spécialité laitière type yaourt, nature, 0% MG, au bifidus",
+    "longueur": 75
+  },
+  {
+    "code": "ciq-19589",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière, aux fruits, sucré, à la crème",
+    "longueur": 75
+  },
+  {
+    "code": "ciq-18024",
+    "nom_actuel": "Boisson plate aux fruits (10 à 50% de jus de jus), sucrée, avec édulcorants",
+    "longueur": 75
+  },
+  {
+    "code": "ciq-20998",
+    "nom_actuel": "Ascophylle noueux ou goémon noir (Ascophyllum nodosum), séché ou déshydraté",
+    "longueur": 75
+  },
+  {
+    "code": "ciq-9876",
+    "nom_actuel": "Pâtes, sans gluten, à base de lentilles corail, cuites à l'eau, non salées",
+    "longueur": 74
+  },
+  {
+    "code": "ciq-28472",
+    "nom_actuel": "Porc, hachage sans jarret, sans bateau, découenné, dégraissé, désossé, cru",
+    "longueur": 74
+  },
+  {
+    "code": "ciq-19538",
+    "nom_actuel": "Boisson lactée, lait fermenté ou yaourt à boire, nature, sucré, au L Casei",
+    "longueur": 74
+  },
+  {
+    "code": "ciq-19577",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière, aromatisé, sucré, à la crème",
+    "longueur": 74
+  },
+  {
+    "code": "ciq-20923",
+    "nom_actuel": "Dessert végétal sans soja, aux fruits, sucré, enrichi en calcium, fermenté",
+    "longueur": 74
+  },
+  {
+    "code": "ciq-18168",
+    "nom_actuel": "Poudre cacaotée ou au chocolat pour boisson, sucrée, enrichie en vitamines",
+    "longueur": 74
+  },
+  {
+    "code": "ciq-4045",
+    "nom_actuel": "Frites de pommes de terre, surgelées, préfrites, pour cuisson micro-ondes",
+    "longueur": 73
+  },
+  {
+    "code": "ciq-4046",
+    "nom_actuel": "Frites de pommes de terre, surgelées, préfrites, pour cuisson en friteuse",
+    "longueur": 73
+  },
+  {
+    "code": "ciq-28473",
+    "nom_actuel": "Porc, jambon sans jarret, sans bateau, découenné, dégraissé, désossé, cru",
+    "longueur": 73
+  },
+  {
+    "code": "ciq-12047",
+    "nom_actuel": "Fromage à pâte molle à croûte lavée, au lait pasteurisé (type Vieux Pané)",
+    "longueur": 73
+  },
+  {
+    "code": "ciq-18034",
+    "nom_actuel": "Boisson gazeuse aux fruits (de 10 à 50% de jus), sucrée, avec édulcorants",
+    "longueur": 73
+  },
+  {
+    "code": "ciq-24031",
+    "nom_actuel": "Biscuit sec croquant (ex : tuile) sans chocolat, allégé en matière grasse",
+    "longueur": 73
+  },
+  {
+    "code": "ciq-4044",
+    "nom_actuel": "Frites de pommes de terre, surgelées, préfrites, pour cuisson rôtie four",
+    "longueur": 72
+  },
+  {
+    "code": "ciq-13153",
+    "nom_actuel": "Purée de fruits, tout type de fruits, type \"compote sans sucres ajoutés\"",
+    "longueur": 72
+  },
+  {
+    "code": "ciq-18305",
+    "nom_actuel": "Boisson plate aux fruits (10 à 50% de jus), non sucrée, avec édulcorants",
+    "longueur": 72
+  },
+  {
+    "code": "ciq-20125",
+    "nom_actuel": "Champignon de Paris ou champignon de couche, poêlé, sans matière grasse",
+    "longueur": 71
+  },
+  {
+    "code": "ciq-12705",
+    "nom_actuel": "Fromage à pâte ferme environ 14% MG type Masdaam à teneur réduite en MG",
+    "longueur": 71
+  },
+  {
+    "code": "ciq-32016",
+    "nom_actuel": "Céréales pour petit déjeuner fourrées au chocolat ou chocolat-noisettes",
+    "longueur": 71
+  },
+  {
+    "code": "ciq-32017",
+    "nom_actuel": "Céréales pour petit déjeuner fourrées au chocolat ou chocolat-noisettes",
+    "longueur": 71
+  },
+  {
+    "code": "ciq-16080",
+    "nom_actuel": "Matière grasse ou graisse végétale solide (type margarine) pour friture",
+    "longueur": 71
+  },
+  {
+    "code": "ciq-16738",
+    "nom_actuel": "Matière grasse végétale (type margarine) à 50-63% MG, allégée, demi-sel",
+    "longueur": 71
+  },
+  {
+    "code": "ciq-13162",
+    "nom_actuel": "Boisson infantile céréales lactées aux fruits pour le goûter dès 4 mois",
+    "longueur": 71
+  },
+  {
+    "code": "ciq-13709",
+    "nom_actuel": "Macédoine ou cocktail ou salade de fruits, au sirop léger, non égoutté",
+    "longueur": 70
+  },
+  {
+    "code": "ciq-19657",
+    "nom_actuel": "Fromage blanc ou spécialité laitière, aux fruits, sucré, 3% MG environ",
+    "longueur": 70
+  },
+  {
+    "code": "ciq-18304",
+    "nom_actuel": "Boisson plate aux fruits (10 à 50% de jus), à teneur réduite en sucres",
+    "longueur": 70
+  },
+  {
+    "code": "ciq-18220",
+    "nom_actuel": "Citron ou Lime, spécialité à diluer pour boissons, sans sucres ajoutés",
+    "longueur": 70
+  },
+  {
+    "code": "ciq-42004",
+    "nom_actuel": "Substitut de repas hypocalorique, poudre reconstituée avec lait écrémé",
+    "longueur": 70
+  },
+  {
+    "code": "ciq-20498",
+    "nom_actuel": "Poêlée de légumes assaisonnés aux champignons (\"champêtre\"), surgelée",
+    "longueur": 69
+  },
+  {
+    "code": "ciq-13200",
+    "nom_actuel": "Mangue José, pulpe, crue, prélevée à La Réunion (Mangifera indica L.)",
+    "longueur": 69
+  },
+  {
+    "code": "ciq-9875",
+    "nom_actuel": "Pâtes, sans gluten, à base de riz et maïs, cuites à l'eau, non salées",
+    "longueur": 69
+  },
+  {
+    "code": "ciq-26247",
+    "nom_actuel": "Flétan du Groënland ou flétan noir ou flétan commun, cuit à la vapeur",
+    "longueur": 69
+  },
+  {
+    "code": "ciq-19557",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière sur lit de fruits, sucré",
+    "longueur": 69
+  },
+  {
+    "code": "ciq-19682",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière, aromatisé ou aux fruits",
+    "longueur": 69
+  },
+  {
+    "code": "ciq-19652",
+    "nom_actuel": "Fromage blanc ou spécialité laitière, aromatisé, sucré, 3% MG environ",
+    "longueur": 69
+  },
+  {
+    "code": "ciq-30999",
+    "nom_actuel": "Confiture ou Marmelade, tout type de fruits, teneur en sucre inconnue",
+    "longueur": 69
+  },
+  {
+    "code": "ciq-13170",
+    "nom_actuel": "Boisson infantile céréales lactées pour le petit déjeuner dès 12 mois",
+    "longueur": 69
+  },
+  {
+    "code": "ciq-13172",
+    "nom_actuel": "Boisson infantile céréales lactées aux légumes pour diner dès 12 mois",
+    "longueur": 69
+  },
+  {
+    "code": "ciq-20323",
+    "nom_actuel": "Oignon nouveau ou oignon frais ou cébette, poêlé sans matière grasse",
+    "longueur": 68
+  },
+  {
+    "code": "ciq-19546",
+    "nom_actuel": "Lait fermenté ou spécialité laitière type yaourt, nature, au bifidus",
+    "longueur": 68
+  },
+  {
+    "code": "ciq-12526",
+    "nom_actuel": "Bleu de Gex ou Fromage bleu du Haut-jura ou Bleu de septmoncel (AOC)",
+    "longueur": 68
+  },
+  {
+    "code": "ciq-32032",
+    "nom_actuel": "Céréales pour petit déjeuner, non enrichies en vitamines et minéraux",
+    "longueur": 68
+  },
+  {
+    "code": "ciq-16413",
+    "nom_actuel": "Beurre à teneur en matière grasse inconnue (allégé ou non), demi-sel",
+    "longueur": 68
+  },
+  {
+    "code": "ciq-13161",
+    "nom_actuel": "Boisson infantile céréales lactées aux légumes pour dîner dès 4 mois",
+    "longueur": 68
+  },
+  {
+    "code": "ciq-13163",
+    "nom_actuel": "Boisson infantile céréales lactées pour le petit déjeuner dès 4 mois",
+    "longueur": 68
+  },
+  {
+    "code": "ciq-13169",
+    "nom_actuel": "Boisson infantile céréales lactées pour le petit déjeuner dès 8 mois",
+    "longueur": 68
+  },
+  {
+    "code": "ciq-12800",
+    "nom_actuel": "Fromage de chèvre frais, au lait pasteurisé (type bûchette fraîche)",
+    "longueur": 67
+  },
+  {
+    "code": "ciq-18104",
+    "nom_actuel": "Boisson cacaotée ou au chocolat, instantanée, sucrée, prête à boire",
+    "longueur": 67
+  },
+  {
+    "code": "ciq-16741",
+    "nom_actuel": "Matière grasse végétale (type margarine) à 50-63% MG, allégée, doux",
+    "longueur": 67
+  },
+  {
+    "code": "ciq-11079",
+    "nom_actuel": "Mayonnaise à teneur réduite en matière grasse ou Mayonnaise allégée",
+    "longueur": 67
+  },
+  {
+    "code": "ciq-20990",
+    "nom_actuel": "Kombu ou kombu japonais (Laminaria japonica), séchée ou déshydratée",
+    "longueur": 67
+  },
+  {
+    "code": "ciq-20993",
+    "nom_actuel": "Gracilaire ou ogonori (Gracilaria verrucosa), séchée ou déshydratée",
+    "longueur": 67
+  },
+  {
+    "code": "ciq-25219",
+    "nom_actuel": "Lasagnes ou cannellonis aux légumes et au fromage de chèvre, cuits",
+    "longueur": 66
+  },
+  {
+    "code": "ciq-13185",
+    "nom_actuel": "Compote ou assimilé, tout type de fruits, teneur en sucre inconnue",
+    "longueur": 66
+  },
+  {
+    "code": "ciq-13708",
+    "nom_actuel": "Macédoine ou cocktail ou salade de fruits, au sirop léger, égoutté",
+    "longueur": 66
+  },
+  {
+    "code": "ciq-13422",
+    "nom_actuel": "Jus de prune de cythère verte \"géante\", fruit vert, pur jus filtré",
+    "longueur": 66
+  },
+  {
+    "code": "ciq-19038",
+    "nom_actuel": "Lait à 1,2% de matière grasse, UHT, enrichi en plusieurs vitamines",
+    "longueur": 66
+  },
+  {
+    "code": "ciq-19535",
+    "nom_actuel": "Boisson lactée, lait fermenté ou yaourt à boire, aux fruits, sucré",
+    "longueur": 66
+  },
+  {
+    "code": "ciq-19536",
+    "nom_actuel": "Boisson lactée, lait fermenté ou yaourt à boire, aux fruits, sucré",
+    "longueur": 66
+  },
+  {
+    "code": "ciq-19597",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière, nature, 0% MG, sucré",
+    "longueur": 66
+  },
+  {
+    "code": "ciq-12008",
+    "nom_actuel": "Fromage à pâte molle et croûte fleurie double crème environ 30% MG",
+    "longueur": 66
+  },
+  {
+    "code": "ciq-18062",
+    "nom_actuel": "Boisson au thé, aromatisée, teneur en sucre et édulcorant inconnue",
+    "longueur": 66
+  },
+  {
+    "code": "ciq-32002",
+    "nom_actuel": "Céréales pour petit déjeuner riches en fibres, avec ou sans fruits",
+    "longueur": 66
+  },
+  {
+    "code": "ciq-32018",
+    "nom_actuel": "Céréales pour petit déjeuner fourrées, fourrage autre que chocolat",
+    "longueur": 66
+  },
+  {
+    "code": "ciq-32025",
+    "nom_actuel": "Céréales pour petit déjeuner \"équilibre\" aux fruits secs (à coque)",
+    "longueur": 66
+  },
+  {
+    "code": "ciq-25548",
+    "nom_actuel": "Pizza jambon fromage champignons ou pizza royale, reine ou regina",
+    "longueur": 65
+  },
+  {
+    "code": "ciq-25574",
+    "nom_actuel": "Sandwich pain de mie complet, jambon, crudités, fromage optionnel",
+    "longueur": 65
+  },
+  {
+    "code": "ciq-13421",
+    "nom_actuel": "Jus de prune de cythère verte \"géante\", fruit mûr, pur jus filtré",
+    "longueur": 65
+  },
+  {
+    "code": "ciq-19508",
+    "nom_actuel": "Boisson lactée, lait fermenté ou yaourt à boire, aromatisé, sucré",
+    "longueur": 65
+  },
+  {
+    "code": "ciq-19534",
+    "nom_actuel": "Boisson lactée, lait fermenté ou yaourt à boire, aromatisé, sucré",
+    "longueur": 65
+  },
+  {
+    "code": "ciq-19558",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière, aux céréales, 0% MG",
+    "longueur": 65
+  },
+  {
+    "code": "ciq-13707",
+    "nom_actuel": "Macédoine ou cocktail ou salade de fruits, au sirop, non égoutté",
+    "longueur": 64
+  },
+  {
+    "code": "ciq-10084",
+    "nom_actuel": "Calmar ou calamar ou encornet, frit ou poêlé avec matière grasse",
+    "longueur": 64
+  },
+  {
+    "code": "ciq-19598",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière, nature, à la crème",
+    "longueur": 64
+  },
+  {
+    "code": "ciq-19692",
+    "nom_actuel": "Dessert au soja, aux fruits, sucré, enrichi en calcium, fermenté",
+    "longueur": 64
+  },
+  {
+    "code": "ciq-19694",
+    "nom_actuel": "Dessert au soja, nature, non sucré, enrichi en calcium, fermenté",
+    "longueur": 64
+  },
+  {
+    "code": "ciq-18001",
+    "nom_actuel": "Boisson gazeuse, sans jus de fruit, non sucrée, avec édulcorants",
+    "longueur": 64
+  },
+  {
+    "code": "ciq-31020",
+    "nom_actuel": "Chocolat au lait sans sucres ajoutés, avec édulcorants, tablette",
+    "longueur": 64
+  },
+  {
+    "code": "ciq-31030",
+    "nom_actuel": "Chocolat noir sans sucres ajoutés, avec édulcorants, en tablette",
+    "longueur": 64
+  },
+  {
+    "code": "ciq-32113",
+    "nom_actuel": "Muesli floconneux aux fruits ou fruits secs, sans sucres ajoutés",
+    "longueur": 64
+  },
+  {
+    "code": "ciq-16411",
+    "nom_actuel": "Beurre à 60-62% MG, à teneur réduite en matière grasse, demi-sel",
+    "longueur": 64
+  },
+  {
+    "code": "ciq-25909",
+    "nom_actuel": "Bouillon de viande et légumes type pot-au-feu, prêt à consommer",
+    "longueur": 63
+  },
+  {
+    "code": "ciq-9086",
+    "nom_actuel": "Pâtes ou nouilles asiatiques au blé, cuites, nature, non salées",
+    "longueur": 63
+  },
+  {
+    "code": "ciq-9863",
+    "nom_actuel": "Pâtes ou nouilles asiatiques au blé et aux oeufs, crues, nature",
+    "longueur": 63
+  },
+  {
+    "code": "ciq-19587",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière, aux fruits, sucré",
+    "longueur": 63
+  },
+  {
+    "code": "ciq-19592",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière, aux fruits, sucré",
+    "longueur": 63
+  },
+  {
+    "code": "ciq-12050",
+    "nom_actuel": "Fromage à pâte molle et croûte mixte (lavée et fleurie) colorée",
+    "longueur": 63
+  },
+  {
+    "code": "ciq-12820",
+    "nom_actuel": "Fromage de chèvre à pâte molle et croûte fleurie type camembert",
+    "longueur": 63
+  },
+  {
+    "code": "ciq-31074",
+    "nom_actuel": "Chocolat noir à 70% cacao minimum, extra, dégustation, tablette",
+    "longueur": 63
+  },
+  {
+    "code": "ciq-31100",
+    "nom_actuel": "Barre céréalière pour petit déjeuner au lait, chocolatée ou non",
+    "longueur": 63
+  },
+  {
+    "code": "ciq-19575",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière, aromatisé, sucré",
+    "longueur": 62
+  },
+  {
+    "code": "ciq-19578",
+    "nom_actuel": "Yaourt, lait fermenté ou spécialité laitière, aromatisé, sucré",
+    "longueur": 62
+  },
+  {
+    "code": "ciq-19656",
+    "nom_actuel": "Fromage blanc ou spécialité laitière, aux fruits, sucré, 0% MG",
+    "longueur": 62
+  },
+  {
+    "code": "ciq-12063",
+    "nom_actuel": "Fromage type feta, au lait de vache, à l'huile et aux aromates",
+    "longueur": 62
+  },
+  {
+    "code": "ciq-1029",
+    "nom_actuel": "Spécialité végétale type fromage en tranche ou râpé, sans soja",
+    "longueur": 62
+  },
+  {
+    "code": "ciq-18341",
+    "nom_actuel": "Boisson gazeuse à la pomme (de 50 à 99% de fruits), non sucrée",
+    "longueur": 62
+  },
+  {
+    "code": "ciq-23684",
+    "nom_actuel": "Galette des rois feuilletée, fourrée frangipane, et Pithiviers",
+    "longueur": 62
+  },
+  {
+    "code": "ciq-20262",
+    "nom_actuel": "Poêlée de légumes assaisonnés sans champignon, surgelée, crue",
+    "longueur": 61
+  },
+  {
+    "code": "ciq-25158",
+    "nom_actuel": "Pâtes fraîches farcies, à la viande (ex : bolognaise), cuites",
+    "longueur": 61
+  },
+  {
+    "code": "ciq-13705",
+    "nom_actuel": "Macédoine ou cocktail ou salade de fruits, au sirop, égouttée",
+    "longueur": 61
+  },
+  {
+    "code": "ciq-38108",
+    "nom_actuel": "Biscuit apéritif soufflé, à base de pomme de terre et de soja",
+    "longueur": 61
+  },
+  {
+    "code": "ciq-28474",
+    "nom_actuel": "Porc, jambonneau arrière, découenné, dégraisssé, désossé, cru",
+    "longueur": 61
+  },
+  {
+    "code": "ciq-30317",
+    "nom_actuel": "Chorizo supérieur, doux ou fort, type charcuterie en tranches",
+    "longueur": 61
+  },
+  {
+    "code": "ciq-22511",
+    "nom_actuel": "Omelette, garnitures diverses : légumes, fromages, viandes...",
+    "longueur": 61
+  },
+  {
+    "code": "ciq-19651",
+    "nom_actuel": "Fromage blanc ou spécialité laitière, aromatisé, sucré, 0% MG",
+    "longueur": 61
+  },
+  {
+    "code": "ciq-24039",
+    "nom_actuel": "Barre biscuitée fourrée aux fruits, allégée en matière grasse",
+    "longueur": 61
+  },
+  {
+    "code": "ciq-25157",
+    "nom_actuel": "Pâtes fraîches farcies, à la viande (ex : bolognaise), crues",
+    "longueur": 60
+  },
+  {
+    "code": "ciq-20819",
+    "nom_actuel": "Giraumon (variété phoenix), pulpe, surgelé, cuit à la vapeur",
+    "longueur": 60
+  },
+  {
+    "code": "ciq-4037",
+    "nom_actuel": "Chips de pommes de terre nature ou aromatisées, à l'ancienne",
+    "longueur": 60
+  },
+  {
+    "code": "ciq-13706",
+    "nom_actuel": "Macédoine ou cocktail ou salade de fruits, au sirop, égoutté",
+    "longueur": 60
+  },
+  {
+    "code": "ciq-38403",
+    "nom_actuel": "Biscuit apéritif, crackers, nature, allégé en matière grasse",
+    "longueur": 60
+  }
+]
