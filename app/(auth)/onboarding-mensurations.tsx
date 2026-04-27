@@ -1,230 +1,247 @@
 import { useState } from 'react';
-import { View, StyleSheet, Pressable, Keyboard } from 'react-native';
+import { View, StyleSheet, Pressable, ScrollView, Platform, Alert } from 'react-native';
 import { Text, TextInput, Button, useTheme } from 'react-native-paper';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import ScrollPicker from '../../components/ScrollPicker';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { calculateAge } from '../../lib/nutrition';
 
-// Generer les valeurs pour les pickers
-const AGES = Array.from({ length: 82 }, (_, i) => i + 14); // 14-95
-const POIDS = Array.from({ length: 161 }, (_, i) => i + 40); // 40-200
-const TAILLES = Array.from({ length: 81 }, (_, i) => i + 120); // 120-200
+const MIN_DATE = new Date(1925, 0, 1);
+const MAX_DATE = new Date(new Date().getFullYear() - 14, 11, 31); // 14 ans min
 
-export default function OnboardingMensurationsScreen() {
+function formatDate(d: Date): string {
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+export default function OnboardingProfilScreen() {
   const theme = useTheme();
-  const params = useLocalSearchParams<{ objectif: string }>();
+  const params = useLocalSearchParams<{ objectif: string; vitesse: string }>();
 
   const [nom, setNom] = useState('');
-  const [age, setAge] = useState(25);
-  const [poids, setPoids] = useState(70);
-  const [taille, setTaille] = useState(170);
   const [sexe, setSexe] = useState<'homme' | 'femme' | ''>('');
-  const [step, setStep] = useState<'info' | 'age' | 'poids' | 'taille'>('info');
+  const [dateNaissance, setDateNaissance] = useState<Date>(new Date(1995, 0, 1));
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [poids, setPoids] = useState('');
+  const [taille, setTaille] = useState('');
 
-  const handleNext = () => {
-    if (step === 'info') {
-      if (!nom || !sexe) return;
-      setStep('age');
-    } else if (step === 'age') {
-      setStep('poids');
-    } else if (step === 'poids') {
-      setStep('taille');
-    } else {
-      router.push({
-        pathname: '/(auth)/onboarding-activite',
-        params: {
-          objectif: params.objectif,
-          nom,
-          age: String(age),
-          poids: String(poids),
-          taille: String(taille),
-          sexe,
-        },
-      });
-    }
+  const onDateChange = (event: DateTimePickerEvent, selected?: Date) => {
+    if (Platform.OS === 'android') setShowDatePicker(false);
+    if (event.type === 'set' && selected) setDateNaissance(selected);
   };
 
-  const canContinue = step === 'info' ? (nom && sexe) : true;
+  const handleConnectHealth = () => {
+    Alert.alert(
+      'Bientôt disponible',
+      'La connexion Apple Santé / Google Fit sera activée dans la prochaine mise à jour. Pour l\'instant tu peux remplir manuellement.',
+      [{ text: 'OK' }],
+    );
+  };
+
+  const age = calculateAge(dateNaissance);
+  const poidsN = Number(poids.replace(',', '.'));
+  const tailleN = Number(taille.replace(',', '.'));
+  const canContinue = nom.trim() && sexe && poidsN > 30 && poidsN < 250 && tailleN > 100 && tailleN < 230;
+
+  const handleNext = () => {
+    router.push({
+      pathname: '/(auth)/onboarding-composition',
+      params: {
+        objectif: params.objectif,
+        vitesse: params.vitesse,
+        nom: nom.trim(),
+        sexe,
+        dateNaissance: dateNaissance.toISOString(),
+        age: String(age),
+        poids: String(poidsN),
+        taille: String(tailleN),
+      },
+    });
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.content}>
-          <Text variant="titleMedium" style={styles.step}>Étape 2/4</Text>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text variant="titleMedium" style={styles.step}>Étape 2/5</Text>
+        <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
+          Parle-nous de toi
+        </Text>
 
-          {step === 'info' && (
-            <>
-              <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
-                Comment tu t'appelles ?
-              </Text>
+        {/* Bouton Health */}
+        <Pressable onPress={handleConnectHealth} style={[styles.healthBtn, { borderColor: theme.colors.primary }]}>
+          <Text style={{ fontSize: 20 }}>❤️</Text>
+          <View style={{ flex: 1 }}>
+            <Text variant="titleSmall" style={{ fontWeight: '600', color: theme.colors.primary }}>
+              Connecter Apple Santé / Google Fit
+            </Text>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
+              Synchronise poids, composition et activité automatiquement
+            </Text>
+          </View>
+        </Pressable>
 
-              <TextInput
-                label="Prénom"
-                value={nom}
-                onChangeText={setNom}
-                mode="outlined"
-                autoCapitalize="words"
-                returnKeyType="done"
-                onSubmitEditing={Keyboard.dismiss}
-                style={styles.input}
-              />
-
-              <Text variant="titleMedium" style={[styles.subtitle, { color: theme.colors.onBackground }]}>
-                Tu es ?
-              </Text>
-
-              <View style={styles.row}>
-                {(['homme', 'femme'] as const).map((s) => {
-                  const isSelected = sexe === s;
-                  return (
-                    <Pressable
-                      key={s}
-                      onPress={() => setSexe(s)}
-                      style={[
-                        styles.sexeOption,
-                        {
-                          borderColor: isSelected ? theme.colors.primary : theme.colors.outline,
-                          backgroundColor: isSelected ? theme.colors.primaryContainer : theme.colors.surface,
-                          flex: 1,
-                        },
-                      ]}
-                    >
-                      <Text style={{ fontSize: 32, textAlign: 'center' }}>
-                        {s === 'homme' ? '👨' : '👩'}
-                      </Text>
-                      <Text
-                        variant="titleMedium"
-                        style={{
-                          textAlign: 'center',
-                          marginTop: 8,
-                          color: isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
-                        }}
-                      >
-                        {s === 'homme' ? 'Homme' : 'Femme'}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </>
-          )}
-
-          {step === 'age' && (
-            <>
-              <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
-                Quel âge as-tu ?
-              </Text>
-              <ScrollPicker
-                values={AGES}
-                selected={age}
-                onSelect={setAge}
-                unit="ans"
-                label="Âge"
-              />
-            </>
-          )}
-
-          {step === 'poids' && (
-            <>
-              <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
-                Quel est ton poids ?
-              </Text>
-              <ScrollPicker
-                values={POIDS}
-                selected={poids}
-                onSelect={setPoids}
-                unit="kg"
-                label="Poids"
-              />
-            </>
-          )}
-
-          {step === 'taille' && (
-            <>
-              <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
-                Quelle est ta taille ?
-              </Text>
-              <ScrollPicker
-                values={TAILLES}
-                selected={taille}
-                onSelect={setTaille}
-                unit="cm"
-                label="Taille"
-              />
-            </>
-          )}
+        <View style={styles.divider}>
+          <View style={[styles.line, { backgroundColor: theme.colors.outlineVariant }]} />
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>ou remplir à la main</Text>
+          <View style={[styles.line, { backgroundColor: theme.colors.outlineVariant }]} />
         </View>
 
-        <View style={styles.footer}>
-          {step !== 'info' && (
-            <Button
-              mode="text"
-              onPress={() => {
-                if (step === 'age') setStep('info');
-                else if (step === 'poids') setStep('age');
-                else if (step === 'taille') setStep('poids');
-              }}
-              style={{ marginBottom: 8 }}
-            >
-              Retour
-            </Button>
-          )}
-          <Button
-            mode="contained"
-            onPress={handleNext}
-            disabled={!canContinue}
-            style={styles.button}
-            contentStyle={styles.buttonContent}
-          >
-            Suivant
+        {/* Prenom */}
+        <TextInput
+          label="Prénom"
+          value={nom}
+          onChangeText={setNom}
+          mode="outlined"
+          autoCapitalize="words"
+          returnKeyType="done"
+          style={styles.input}
+        />
+
+        {/* Sexe */}
+        <Text variant="bodyMedium" style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Sexe</Text>
+        <View style={styles.row}>
+          {(['homme', 'femme'] as const).map((s) => {
+            const isSelected = sexe === s;
+            return (
+              <Pressable
+                key={s}
+                onPress={() => setSexe(s)}
+                style={[
+                  styles.sexeOption,
+                  {
+                    borderColor: isSelected ? theme.colors.primary : theme.colors.outlineVariant,
+                    backgroundColor: isSelected ? theme.colors.primaryContainer : theme.colors.surface,
+                  },
+                ]}
+              >
+                <Text style={{ fontSize: 28, textAlign: 'center' }}>{s === 'homme' ? '👨' : '👩'}</Text>
+                <Text
+                  variant="titleSmall"
+                  style={{
+                    textAlign: 'center',
+                    marginTop: 4,
+                    fontWeight: '600',
+                    color: isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
+                  }}
+                >
+                  {s === 'homme' ? 'Homme' : 'Femme'}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* Date de naissance */}
+        <Text variant="bodyMedium" style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>Date de naissance</Text>
+        <Pressable
+          onPress={() => setShowDatePicker(true)}
+          style={[styles.dateInput, { borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface }]}
+        >
+          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+            {formatDate(dateNaissance)}
+          </Text>
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
+            {age} ans
+          </Text>
+        </Pressable>
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={dateNaissance}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={onDateChange}
+            minimumDate={MIN_DATE}
+            maximumDate={MAX_DATE}
+            locale="fr-FR"
+          />
+        )}
+
+        {Platform.OS === 'ios' && showDatePicker && (
+          <Button mode="text" onPress={() => setShowDatePicker(false)} style={{ alignSelf: 'flex-end' }}>
+            Valider
           </Button>
+        )}
+
+        {/* Poids et taille */}
+        <View style={[styles.row, { marginTop: 8 }]}>
+          <TextInput
+            label="Poids (kg)"
+            value={poids}
+            onChangeText={setPoids}
+            mode="outlined"
+            keyboardType="decimal-pad"
+            returnKeyType="done"
+            style={[styles.input, { flex: 1 }]}
+          />
+          <TextInput
+            label="Taille (cm)"
+            value={taille}
+            onChangeText={setTaille}
+            mode="outlined"
+            keyboardType="decimal-pad"
+            returnKeyType="done"
+            style={[styles.input, { flex: 1 }]}
+          />
         </View>
-      </SafeAreaView>
+      </ScrollView>
+
+      <View style={styles.footer}>
+        <Button
+          mode="contained"
+          onPress={handleNext}
+          disabled={!canContinue}
+          style={styles.button}
+          contentStyle={styles.buttonContent}
+        >
+          Suivant
+        </Button>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
-  },
-  step: {
-    opacity: 0.5,
-    marginBottom: 8,
-  },
-  title: {
-    fontWeight: 'bold',
-    marginBottom: 32,
-  },
-  subtitle: {
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 16,
-  },
-  input: {
-    marginBottom: 8,
-  },
-  row: {
+  container: { flex: 1 },
+  content: { paddingHorizontal: 24, paddingTop: 40, paddingBottom: 24 },
+  step: { opacity: 0.5, marginBottom: 8 },
+  title: { fontWeight: 'bold', marginBottom: 24 },
+  healthBtn: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
-    marginBottom: 16,
-  },
-  sexeOption: {
-    padding: 20,
+    padding: 16,
     borderRadius: 16,
     borderWidth: 2,
+    borderStyle: 'dashed',
+    marginBottom: 20,
   },
-  footer: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 20,
   },
-  button: {
-    borderRadius: 8,
+  line: { flex: 1, height: 1 },
+  label: { fontWeight: '500', marginBottom: 8, marginTop: 4 },
+  input: { marginBottom: 12 },
+  row: { flexDirection: 'row', gap: 12, marginBottom: 8 },
+  sexeOption: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 2,
   },
-  buttonContent: {
-    paddingVertical: 6,
+  dateInput: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
   },
+  footer: { paddingHorizontal: 24, paddingBottom: 24, paddingTop: 8 },
+  button: { borderRadius: 12 },
+  buttonContent: { paddingVertical: 8 },
 });

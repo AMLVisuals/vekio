@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-import { calculateNeeds, type Profile, type MacroObjectifs } from '../lib/nutrition';
+import { calculateNeeds, type Profile, type MacroObjectifs, type Sport, type Vitesse } from '../lib/nutrition';
 
 interface UserProfile {
   id: string;
@@ -10,9 +10,30 @@ interface UserProfile {
   poids: number;
   taille: number;
   sexe: 'homme' | 'femme';
-  activite: 'sedentaire' | 'leger' | 'modere' | 'actif' | 'tres_actif';
   objectif: 'perte' | 'maintien' | 'prise';
+  vitesse_kg_semaine: number | null;
+  date_naissance: string | null;
+  sports: Sport[];
+  masse_grasse_pct?: number;
+  masse_musculaire_pct?: number;
+  masse_hydrique_pct?: number;
+  intro_seen: Record<string, boolean>;
   isPro: boolean;
+}
+
+interface SaveProfileInput {
+  nom: string;
+  age: number;
+  poids: number;
+  taille: number;
+  sexe: 'homme' | 'femme';
+  objectif: 'perte' | 'maintien' | 'prise';
+  vitesse_kg_semaine: number | null;
+  date_naissance: string | null;
+  sports: Sport[];
+  masse_grasse_pct?: number;
+  masse_musculaire_pct?: number;
+  masse_hydrique_pct?: number;
 }
 
 interface UserState {
@@ -26,11 +47,12 @@ interface UserState {
   setMacros: (macros: MacroObjectifs) => void;
   setIsPro: (isPro: boolean) => void;
   logout: () => void;
+  markIntroSeen: (tab: string) => Promise<void>;
 
-  // Supabase
   checkSession: () => Promise<void>;
   loadProfile: (userId: string) => Promise<boolean>;
-  saveProfile: (data: Omit<UserProfile, 'id' | 'email' | 'isPro'>) => Promise<void>;
+  saveProfile: (data: SaveProfileInput) => Promise<void>;
+  setPeseeSchedule: (jour: number, heure: string) => Promise<void>;
 }
 
 export const useUserStore = create<UserState>((set, get) => ({
@@ -56,7 +78,6 @@ export const useUserStore = create<UserState>((set, get) => ({
   checkSession: async () => {
     set({ isLoading: true });
     const { data: { session } } = await supabase.auth.getSession();
-
     if (session?.user) {
       const hasProfile = await get().loadProfile(session.user.id);
       set({
@@ -86,6 +107,8 @@ export const useUserStore = create<UserState>((set, get) => ({
 
     const { data: { user } } = await supabase.auth.getUser();
 
+    const sports: Sport[] = Array.isArray(profileData.sports) ? profileData.sports : [];
+
     set({
       profile: {
         id: userId,
@@ -95,8 +118,14 @@ export const useUserStore = create<UserState>((set, get) => ({
         poids: Number(profileData.poids),
         taille: Number(profileData.taille),
         sexe: profileData.sexe,
-        activite: profileData.activite,
         objectif: profileData.objectif,
+        vitesse_kg_semaine: profileData.vitesse_kg_semaine !== null ? Number(profileData.vitesse_kg_semaine) : null,
+        date_naissance: profileData.date_naissance ?? null,
+        sports,
+        masse_grasse_pct: profileData.masse_grasse_pct !== null ? Number(profileData.masse_grasse_pct) : undefined,
+        masse_musculaire_pct: profileData.masse_musculaire_pct !== null ? Number(profileData.masse_musculaire_pct) : undefined,
+        masse_hydrique_pct: profileData.masse_hydrique_pct !== null ? Number(profileData.masse_hydrique_pct) : undefined,
+        intro_seen: (profileData.intro_seen as Record<string, boolean>) ?? {},
         isPro: profileData.is_pro ?? false,
       },
       macros: macrosData
@@ -105,6 +134,10 @@ export const useUserStore = create<UserState>((set, get) => ({
             proteines_g: Number(macrosData.proteines_g),
             glucides_g: Number(macrosData.glucides_g),
             lipides_g: Number(macrosData.lipides_g),
+            bmr: 0,
+            tdee: 0,
+            facteurActivite: 0,
+            calculesSurMasseMaigre: macrosData.calculees_sur_masse_maigre ?? false,
           }
         : null,
     });
@@ -116,7 +149,11 @@ export const useUserStore = create<UserState>((set, get) => ({
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Non connecté');
 
-    // Sauvegarder le profil
+    const vitesse: Vitesse | undefined =
+      data.vitesse_kg_semaine === 0.25 || data.vitesse_kg_semaine === 0.5 || data.vitesse_kg_semaine === 0.75
+        ? data.vitesse_kg_semaine : undefined;
+
+    // Sauvegarde profil
     const { error: profileError } = await supabase
       .from('profiles')
       .upsert({
@@ -126,21 +163,28 @@ export const useUserStore = create<UserState>((set, get) => ({
         poids: data.poids,
         taille: data.taille,
         sexe: data.sexe,
-        activite: data.activite,
         objectif: data.objectif,
+        vitesse_kg_semaine: data.vitesse_kg_semaine,
+        date_naissance: data.date_naissance,
+        sports: data.sports,
+        masse_grasse_pct: data.masse_grasse_pct ?? null,
+        masse_musculaire_pct: data.masse_musculaire_pct ?? null,
+        masse_hydrique_pct: data.masse_hydrique_pct ?? null,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
 
     if (profileError) throw profileError;
 
-    // Calculer et sauvegarder les macros
+    // Calcul des macros
     const profileForCalc: Profile = {
       sexe: data.sexe,
       age: data.age,
       poids: data.poids,
       taille: data.taille,
-      activite: data.activite,
       objectif: data.objectif,
+      vitesse,
+      sports: data.sports,
+      masseGrassePct: data.masse_grasse_pct,
     };
     const macros = calculateNeeds(profileForCalc);
 
@@ -152,6 +196,7 @@ export const useUserStore = create<UserState>((set, get) => ({
         proteines_g: macros.proteines_g,
         glucides_g: macros.glucides_g,
         lipides_g: macros.lipides_g,
+        calculees_sur_masse_maigre: macros.calculesSurMasseMaigre,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
 
@@ -162,10 +207,50 @@ export const useUserStore = create<UserState>((set, get) => ({
         id: user.id,
         email: user.email ?? '',
         isPro: false,
-        ...data,
+        nom: data.nom,
+        age: data.age,
+        poids: data.poids,
+        taille: data.taille,
+        sexe: data.sexe,
+        objectif: data.objectif,
+        vitesse_kg_semaine: data.vitesse_kg_semaine,
+        date_naissance: data.date_naissance,
+        sports: data.sports,
+        masse_grasse_pct: data.masse_grasse_pct,
+        masse_musculaire_pct: data.masse_musculaire_pct,
+        masse_hydrique_pct: data.masse_hydrique_pct,
+        intro_seen: {},
       },
       macros,
       hasCompletedOnboarding: true,
     });
+  },
+
+  // -------------------------------------------------------------------------
+  // Marquer un onglet comme "intro vue" (pour ne plus afficher le pop-up)
+  // -------------------------------------------------------------------------
+  markIntroSeen: async (tab: string) => {
+    const current = get().profile?.intro_seen ?? {};
+    const next = { ...current, [tab]: true };
+    set((s) => ({ profile: s.profile ? { ...s.profile, intro_seen: next } : null }));
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase
+      .from('profiles')
+      .update({ intro_seen: next })
+      .eq('user_id', user.id);
+  },
+
+  // -------------------------------------------------------------------------
+  // Configurer le jour et l'heure de la pesee hebdomadaire
+  // -------------------------------------------------------------------------
+  setPeseeSchedule: async (jour: number, heure: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase
+      .from('profiles')
+      .update({ jour_pesee_hebdo: jour, heure_notification_pesee: heure })
+      .eq('user_id', user.id);
   },
 }));

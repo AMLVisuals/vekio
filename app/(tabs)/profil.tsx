@@ -13,14 +13,6 @@ const OBJECTIFS = [
   { value: 'prise', label: 'Prendre du poids' },
 ];
 
-const ACTIVITES = [
-  { value: 'sedentaire', label: 'Sédentaire' },
-  { value: 'leger', label: 'Léger' },
-  { value: 'modere', label: 'Modéré' },
-  { value: 'actif', label: 'Actif' },
-  { value: 'tres_actif', label: 'Très actif' },
-];
-
 export default function ProfilScreen() {
   const theme = useTheme();
   const profile = useUserStore((s) => s.profile);
@@ -38,7 +30,6 @@ export default function ProfilScreen() {
   const [poids, setPoids] = useState(String(profile?.poids ?? ''));
   const [taille, setTaille] = useState(String(profile?.taille ?? ''));
   const [sexe, setSexe] = useState(profile?.sexe ?? 'homme');
-  const [activite, setActivite] = useState(profile?.activite ?? 'modere');
   const [objectif, setObjectif] = useState(profile?.objectif ?? 'maintien');
 
   // Champs macros custom
@@ -57,18 +48,22 @@ export default function ProfilScreen() {
     try {
       await saveProfile({
         nom,
-        email: profile?.email ?? '',
         age: Number(age),
         poids: Number(poids),
         taille: Number(taille),
         sexe: sexe as any,
-        activite: activite as any,
         objectif: objectif as any,
+        vitesse_kg_semaine: profile?.vitesse_kg_semaine ?? null,
+        date_naissance: profile?.date_naissance ?? null,
+        sports: profile?.sports ?? [],
+        masse_grasse_pct: profile?.masse_grasse_pct,
+        masse_musculaire_pct: profile?.masse_musculaire_pct,
+        masse_hydrique_pct: profile?.masse_hydrique_pct,
       });
 
       // Mettre a jour le poids dans l'historique si change
       if (Number(poids) !== profile?.poids) {
-        await useWeightStore.getState().addWeight(Number(poids));
+        await useWeightStore.getState().addWeight({ poids_kg: Number(poids), source: 'manuel' });
       }
 
       // Mettre a jour les champs macros avec les nouvelles valeurs calculees
@@ -193,15 +188,6 @@ export default function ProfilScreen() {
                     <TextInput label="Taille" value={taille} onChangeText={setTaille} mode="outlined" dense keyboardType="numeric" right={<TextInput.Affix text="cm" />} style={[styles.input, { flex: 1 }]} returnKeyType="done" onSubmitEditing={Keyboard.dismiss} />
                   </View>
 
-                  <Text variant="bodySmall" style={styles.label}>Activité</Text>
-                  <View style={styles.chipRow}>
-                    {ACTIVITES.map((a) => (
-                      <Button key={a.value} mode={activite === a.value ? 'contained' : 'outlined'} compact onPress={() => setActivite(a.value as any)} style={styles.chip}>
-                        {a.label}
-                      </Button>
-                    ))}
-                  </View>
-
                   <Text variant="bodySmall" style={styles.label}>Objectif</Text>
                   <View style={styles.chipRow}>
                     {OBJECTIFS.map((o) => (
@@ -223,7 +209,6 @@ export default function ProfilScreen() {
                   <InfoRow label="Âge" value={`${profile?.age ?? '-'} ans`} />
                   <InfoRow label="Poids" value={`${profile?.poids ?? '-'} kg`} />
                   <InfoRow label="Taille" value={`${profile?.taille ?? '-'} cm`} />
-                  <InfoRow label="Activité" value={ACTIVITES.find((a) => a.value === profile?.activite)?.label ?? '-'} />
                   <InfoRow label="Objectif" value={OBJECTIFS.find((o) => o.value === profile?.objectif)?.label ?? '-'} />
                 </>
               )}

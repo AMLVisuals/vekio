@@ -28,7 +28,9 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.vekio.app",
-      "permissions": ["CAMERA"]
+      "permissions": [
+        "CAMERA"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -48,7 +50,8 @@
           "icon": "./assets/icon.png"
         }
       ],
-      "expo-image-picker"
+      "expo-image-picker",
+      "@react-native-community/datetimepicker"
     ]
   }
 }

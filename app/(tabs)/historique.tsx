@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, SegmentedButtons, Card, useTheme } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { Text, SegmentedButtons, Card, useTheme, Button, Portal, Modal } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Rect, Line, Circle } from 'react-native-svg';
+import Svg, { Rect, Line } from 'react-native-svg';
 import { supabase } from '../../lib/supabase';
 import { useUserStore } from '../../stores/userStore';
+import { useWeightStore } from '../../stores/weightStore';
 import { MEAL_LABELS, type MealType } from '../../stores/journalStore';
 
 interface DayData {
@@ -16,17 +17,49 @@ interface DayData {
   entries: { nom: string; repas: MealType; calories: number; quantite_g: number }[];
 }
 
+const JOURS = [
+  { value: 0, label: 'Dim' },
+  { value: 1, label: 'Lun' },
+  { value: 2, label: 'Mar' },
+  { value: 3, label: 'Mer' },
+  { value: 4, label: 'Jeu' },
+  { value: 5, label: 'Ven' },
+  { value: 6, label: 'Sam' },
+];
+
+const HEURES = ['07:00', '08:00', '09:00', '10:00', '18:00', '19:00', '20:00'];
+
 export default function HistoriqueScreen() {
   const theme = useTheme();
+  const profile = useUserStore((s) => s.profile);
+  const macros = useUserStore((s) => s.macros);
+  const markIntroSeen = useUserStore((s) => s.markIntroSeen);
+  const setPeseeSchedule = useUserStore((s) => s.setPeseeSchedule);
+
+  const history = useWeightStore((s) => s.history);
+  const loadHistory = useWeightStore((s) => s.loadHistory);
+
   const [view, setView] = useState('semaine');
   const [data, setData] = useState<DayData[]>([]);
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
   const [streak, setStreak] = useState(0);
-  const macros = useUserStore((s) => s.macros);
+
+  // Pop-up d'introduction (premiere visite uniquement)
+  const [showIntro, setShowIntro] = useState(false);
+  const [introJour, setIntroJour] = useState<number>(1); // lundi
+  const [introHeure, setIntroHeure] = useState<string>('09:00');
+
+  useEffect(() => { loadHistory(); }, []);
 
   useEffect(() => {
     loadData();
   }, [view]);
+
+  useEffect(() => {
+    if (profile && !profile.intro_seen?.stats) {
+      setShowIntro(true);
+    }
+  }, [profile?.id]);
 
   const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -46,22 +79,12 @@ export default function HistoriqueScreen() {
 
     if (!rows) return;
 
-    // Grouper par date
     const grouped = new Map<string, DayData>();
-
-    // Creer toutes les dates (meme vides)
     for (let i = 0; i < days; i++) {
       const d = new Date();
       d.setDate(d.getDate() - days + 1 + i);
       const dateStr = d.toISOString().split('T')[0];
-      grouped.set(dateStr, {
-        date: dateStr,
-        calories: 0,
-        proteines: 0,
-        glucides: 0,
-        lipides: 0,
-        entries: [],
-      });
+      grouped.set(dateStr, { date: dateStr, calories: 0, proteines: 0, glucides: 0, lipides: 0, entries: [] });
     }
 
     rows.forEach((row) => {
@@ -83,7 +106,6 @@ export default function HistoriqueScreen() {
     const result = Array.from(grouped.values());
     setData(result);
 
-    // Calculer le streak (jours consecutifs avec au moins 1 entree)
     let s = 0;
     for (let i = result.length - 1; i >= 0; i--) {
       if (result[i].entries.length > 0) s++;
@@ -92,6 +114,26 @@ export default function HistoriqueScreen() {
     setStreak(s);
   };
 
+  const closeIntro = async () => {
+    await setPeseeSchedule(introJour, introHeure);
+    await markIntroSeen('stats');
+    setShowIntro(false);
+  };
+
+  // Donnees evolution poids
+  const poidsInitial = history.length > 0 ? history[0].poids_kg : profile?.poids ?? 0;
+  const poidsActuel = history.length > 0 ? history[history.length - 1].poids_kg : profile?.poids ?? 0;
+  const ecart = poidsActuel - poidsInitial;
+  const ecartLabel = ecart === 0 ? '0' : (ecart > 0 ? `+${ecart.toFixed(1)}` : ecart.toFixed(1));
+  const ecartColor = profile?.objectif === 'perte'
+    ? (ecart < 0 ? '#4CAF50' : ecart > 0 ? '#E57373' : theme.colors.onSurface)
+    : profile?.objectif === 'prise'
+    ? (ecart > 0 ? '#4CAF50' : ecart < 0 ? '#E57373' : theme.colors.onSurface)
+    : theme.colors.onSurface;
+
+  // Composition corporelle (derniere mesure)
+  const lastWithComposition = [...history].reverse().find((h) => h.masse_grasse_pct !== undefined);
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -99,6 +141,77 @@ export default function HistoriqueScreen() {
           Statistiques
         </Text>
 
+        {/* Carte evolution poids */}
+        <Card style={styles.card} mode="outlined">
+          <Card.Content>
+            <Text variant="titleMedium" style={styles.cardTitle}>Mon évolution</Text>
+            <View style={styles.evolutionRow}>
+              <View style={styles.evolutionCell}>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>Initial</Text>
+                <Text variant="titleLarge" style={{ fontWeight: '600' }}>{poidsInitial.toFixed(1)}</Text>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>kg</Text>
+              </View>
+              <View style={styles.evolutionCell}>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>Actuel</Text>
+                <Text variant="headlineSmall" style={{ fontWeight: 'bold', color: theme.colors.primary }}>
+                  {poidsActuel.toFixed(1)}
+                </Text>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>kg</Text>
+              </View>
+              <View style={styles.evolutionCell}>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>Écart</Text>
+                <Text variant="titleLarge" style={{ fontWeight: '600', color: ecartColor }}>
+                  {ecartLabel}
+                </Text>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>kg</Text>
+              </View>
+            </View>
+            <Button
+              mode="contained-tonal"
+              icon="scale-bathroom"
+              onPress={() => Alert.alert('Bientôt', 'L\'écran de pesée hebdomadaire arrive dans la prochaine mise à jour. Pour l\'instant tu peux modifier ton poids dans le profil.')}
+              style={styles.addBtn}
+            >
+              Ajouter une pesée
+            </Button>
+          </Card.Content>
+        </Card>
+
+        {/* Composition corporelle si dispo */}
+        {lastWithComposition && (
+          <Card style={styles.card} mode="outlined">
+            <Card.Content>
+              <Text variant="titleMedium" style={styles.cardTitle}>Composition corporelle</Text>
+              <View style={styles.compoRow}>
+                {lastWithComposition.masse_grasse_pct !== undefined && (
+                  <CompoCell label="Grasse" value={`${lastWithComposition.masse_grasse_pct}%`} color="#FF9800" />
+                )}
+                {lastWithComposition.masse_musculaire_pct !== undefined && (
+                  <CompoCell label="Muscle" value={`${lastWithComposition.masse_musculaire_pct}%`} color="#4CAF50" />
+                )}
+                {lastWithComposition.masse_hydrique_pct !== undefined && (
+                  <CompoCell label="Eau" value={`${lastWithComposition.masse_hydrique_pct}%`} color="#2196F3" />
+                )}
+              </View>
+            </Card.Content>
+          </Card>
+        )}
+
+        {/* Streak */}
+        {streak > 1 && (
+          <Card style={[styles.card, { backgroundColor: '#E8F5E9' }]} mode="contained">
+            <Card.Content style={{ alignItems: 'center' }}>
+              <Text variant="titleLarge" style={{ fontWeight: 'bold', color: '#2E7D32' }}>
+                🔥 {streak} jours d'affilée
+              </Text>
+              <Text variant="bodySmall" style={{ color: '#388E3C' }}>
+                Continue comme ça !
+              </Text>
+            </Card.Content>
+          </Card>
+        )}
+
+        {/* Periode */}
         <SegmentedButtons
           value={view}
           onValueChange={setView}
@@ -109,51 +222,33 @@ export default function HistoriqueScreen() {
           style={styles.segmented}
         />
 
-        {/* Streak */}
-        {streak > 1 && (
-          <Card style={[styles.streakCard, { backgroundColor: '#E8F5E9' }]} mode="contained">
-            <Card.Content style={{ alignItems: 'center' }}>
-              <Text variant="titleLarge" style={{ fontWeight: 'bold', color: '#2E7D32' }}>
-                {streak} jours d'affilée
-              </Text>
-              <Text variant="bodySmall" style={{ color: '#388E3C' }}>
-                Continue comme ça !
-              </Text>
-            </Card.Content>
-          </Card>
-        )}
-
-        {/* Graphique calories */}
+        {/* Calories */}
         <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
           Calories
         </Text>
-        <Card style={styles.chartCard} mode="outlined">
+        <Card style={styles.card} mode="outlined">
           <Card.Content>
-            <CalorieChart
-              data={data}
-              target={macros?.calories ?? 2000}
-              onSelectDay={setSelectedDay}
-            />
+            <CalorieChart data={data} target={macros?.calories ?? 2000} onSelectDay={setSelectedDay} />
           </Card.Content>
         </Card>
 
-        {/* Graphique macros */}
+        {/* Macros moyennes */}
         <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
           Macronutriments
         </Text>
-        <Card style={styles.chartCard} mode="outlined">
+        <Card style={styles.card} mode="outlined">
           <Card.Content>
             <MacroChart data={data} />
           </Card.Content>
         </Card>
 
-        {/* Detail du jour selectionne */}
+        {/* Detail du jour */}
         {selectedDay && selectedDay.entries.length > 0 && (
           <>
             <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
               {new Date(selectedDay.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
             </Text>
-            <Card style={styles.chartCard} mode="outlined">
+            <Card style={styles.card} mode="outlined">
               <Card.Content>
                 <View style={styles.dayMacros}>
                   <DayStat label="Calories" value={`${Math.round(selectedDay.calories)}`} unit="kcal" color={theme.colors.primary} />
@@ -183,7 +278,101 @@ export default function HistoriqueScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* Pop-up intro (premiere visite) */}
+      <Portal>
+        <Modal
+          visible={showIntro}
+          onDismiss={() => {}}
+          dismissable={false}
+          contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
+        >
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text style={{ fontSize: 36, textAlign: 'center', marginBottom: 8 }}>📊</Text>
+            <Text variant="headlineSmall" style={[styles.modalTitle, { color: theme.colors.onSurface }]}>
+              Bienvenue dans tes stats
+            </Text>
+            <Text variant="bodyMedium" style={[styles.modalDesc, { color: theme.colors.onSurfaceVariant }]}>
+              Cet onglet suit ton évolution dans le temps : poids, composition corporelle et nutrition. Plus tu loggues, plus c'est utile.
+            </Text>
+
+            <Text variant="titleMedium" style={styles.modalSection}>Ton jour de pesée</Text>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 12 }}>
+              Choisis le jour où tu veux te peser chaque semaine. On te le rappellera.
+            </Text>
+            <View style={styles.jourRow}>
+              {JOURS.map((j) => {
+                const isSel = introJour === j.value;
+                return (
+                  <Button
+                    key={j.value}
+                    mode={isSel ? 'contained' : 'outlined'}
+                    compact
+                    onPress={() => setIntroJour(j.value)}
+                    style={styles.jourBtn}
+                    contentStyle={{ paddingHorizontal: 0 }}
+                  >
+                    {j.label}
+                  </Button>
+                );
+              })}
+            </View>
+
+            <Text variant="titleMedium" style={styles.modalSection}>Heure du rappel</Text>
+            <View style={styles.heureRow}>
+              {HEURES.map((h) => {
+                const isSel = introHeure === h;
+                return (
+                  <Button
+                    key={h}
+                    mode={isSel ? 'contained' : 'outlined'}
+                    compact
+                    onPress={() => setIntroHeure(h)}
+                    style={styles.heureBtn}
+                  >
+                    {h}
+                  </Button>
+                );
+              })}
+            </View>
+
+            <Card mode="contained" style={[styles.tips, { backgroundColor: theme.colors.primaryContainer }]}>
+              <Card.Content>
+                <Text variant="titleSmall" style={{ fontWeight: '600', marginBottom: 8, color: theme.colors.onPrimaryContainer }}>
+                  💡 Pour bien te peser
+                </Text>
+                <Text variant="bodySmall" style={{ lineHeight: 18, color: theme.colors.onPrimaryContainer }}>
+                  • Le matin à jeun, après le passage aux toilettes{'\n'}
+                  • Sans vêtements (ou toujours les mêmes){'\n'}
+                  • Toujours le même jour de la semaine{'\n'}
+                  • Sur une surface dure (pas un tapis){'\n'}
+                  • Garde la même méthode pour des données comparables
+                </Text>
+              </Card.Content>
+            </Card>
+
+            <Button
+              mode="contained"
+              onPress={closeIntro}
+              style={styles.modalBtn}
+              contentStyle={{ paddingVertical: 6 }}
+            >
+              C'est parti !
+            </Button>
+          </ScrollView>
+        </Modal>
+      </Portal>
     </SafeAreaView>
+  );
+}
+
+function CompoCell({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <View style={{ flex: 1, alignItems: 'center' }}>
+      <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: color, marginBottom: 4 }} />
+      <Text variant="titleLarge" style={{ fontWeight: 'bold' }}>{value}</Text>
+      <Text variant="bodySmall" style={{ opacity: 0.6 }}>{label}</Text>
+    </View>
   );
 }
 
@@ -193,13 +382,11 @@ function CalorieChart({ data, target, onSelectDay }: { data: DayData[]; target: 
   const chartHeight = 150;
   const padding = 24;
   const barWidth = Math.max(4, (chartWidth - padding * 2) / data.length - 4);
-
   const maxCal = Math.max(target, ...data.map((d) => d.calories)) * 1.1;
 
   return (
     <View style={{ alignItems: 'center' }}>
       <Svg width={chartWidth} height={chartHeight}>
-        {/* Ligne objectif */}
         <Line
           x1={padding}
           y1={chartHeight - padding - (target / maxCal) * (chartHeight - padding * 2)}
@@ -209,8 +396,6 @@ function CalorieChart({ data, target, onSelectDay }: { data: DayData[]; target: 
           strokeWidth={1}
           strokeDasharray="4,4"
         />
-
-        {/* Barres */}
         {data.map((day, i) => {
           const barHeight = (day.calories / maxCal) * (chartHeight - padding * 2);
           const x = padding + i * ((chartWidth - padding * 2) / data.length) + 2;
@@ -218,23 +403,11 @@ function CalorieChart({ data, target, onSelectDay }: { data: DayData[]; target: 
           const ratio = day.calories / target;
           const color = day.calories === 0 ? theme.colors.surfaceVariant :
             ratio < 0.9 ? '#4CAF50' : ratio <= 1.1 ? '#FF9800' : '#E57373';
-
           return (
-            <Rect
-              key={i}
-              x={x}
-              y={y}
-              width={barWidth}
-              height={Math.max(barHeight, 2)}
-              rx={2}
-              fill={color}
-              onPress={() => onSelectDay(day)}
-            />
+            <Rect key={i} x={x} y={y} width={barWidth} height={Math.max(barHeight, 2)} rx={2} fill={color} onPress={() => onSelectDay(day)} />
           );
         })}
       </Svg>
-
-      {/* Labels dates */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: chartWidth, paddingHorizontal: padding }}>
         <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
           {data.length > 0 ? new Date(data[0].date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''}
@@ -252,10 +425,11 @@ function CalorieChart({ data, target, onSelectDay }: { data: DayData[]; target: 
 
 function MacroChart({ data }: { data: DayData[] }) {
   const theme = useTheme();
-
-  const avgProt = data.length > 0 ? data.reduce((s, d) => s + d.proteines, 0) / data.filter((d) => d.entries.length > 0).length || 0 : 0;
-  const avgGluc = data.length > 0 ? data.reduce((s, d) => s + d.glucides, 0) / data.filter((d) => d.entries.length > 0).length || 0 : 0;
-  const avgLip = data.length > 0 ? data.reduce((s, d) => s + d.lipides, 0) / data.filter((d) => d.entries.length > 0).length || 0 : 0;
+  const filled = data.filter((d) => d.entries.length > 0);
+  const n = filled.length || 1;
+  const avgProt = filled.reduce((s, d) => s + d.proteines, 0) / n;
+  const avgGluc = filled.reduce((s, d) => s + d.glucides, 0) / n;
+  const avgLip = filled.reduce((s, d) => s + d.lipides, 0) / n;
 
   return (
     <View style={{ gap: 12 }}>
@@ -283,39 +457,39 @@ function DayStat({ label, value, unit, color }: { label: string; value: string; 
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  title: {
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  segmented: {
-    marginBottom: 20,
-  },
-  streakCard: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  chartCard: {
-    marginBottom: 20,
-  },
-  dayMacros: {
+  container: { flex: 1 },
+  scrollContent: { padding: 20, paddingBottom: 40 },
+  title: { fontWeight: 'bold', marginBottom: 16 },
+  card: { marginBottom: 16, borderRadius: 16 },
+  cardTitle: { fontWeight: '600', marginBottom: 12 },
+  evolutionRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: 16,
+    alignItems: 'center',
+    paddingVertical: 4,
+    marginBottom: 8,
   },
-  mealSection: {
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
+  evolutionCell: { alignItems: 'center', flex: 1 },
+  addBtn: { borderRadius: 12, marginTop: 4 },
+  compoRow: { flexDirection: 'row', justifyContent: 'space-around' },
+  segmented: { marginBottom: 16 },
+  sectionTitle: { fontWeight: '600', marginBottom: 8 },
+  dayMacros: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 16 },
+  mealSection: { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#eee' },
+
+  modal: {
+    margin: 16,
+    padding: 24,
+    borderRadius: 24,
+    maxHeight: '90%',
   },
+  modalTitle: { fontWeight: 'bold', textAlign: 'center', marginBottom: 8 },
+  modalDesc: { textAlign: 'center', marginBottom: 20, lineHeight: 20 },
+  modalSection: { fontWeight: '600', marginTop: 16, marginBottom: 8 },
+  jourRow: { flexDirection: 'row', gap: 4, flexWrap: 'wrap' },
+  jourBtn: { flex: 1, minWidth: 40, borderRadius: 8 },
+  heureRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  heureBtn: { borderRadius: 8 },
+  tips: { marginTop: 16, borderRadius: 12 },
+  modalBtn: { marginTop: 20, borderRadius: 12 },
 });

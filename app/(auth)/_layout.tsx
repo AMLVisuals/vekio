@@ -7,6 +7,7 @@ export default function AuthLayout() {
       <Stack.Screen name="register" />
       <Stack.Screen name="onboarding-objectif" />
       <Stack.Screen name="onboarding-mensurations" />
+      <Stack.Screen name="onboarding-composition" />
       <Stack.Screen name="onboarding-activite" />
       <Stack.Screen name="onboarding-recap" />
     </Stack>
