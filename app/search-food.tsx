@@ -128,8 +128,8 @@ export default function SearchFoodScreen() {
             <Pressable onPress={() => selectFood(item)}>
               <View style={[styles.foodItem, { borderBottomColor: theme.colors.outlineVariant }]}>
                 <View style={{ flex: 1 }}>
-                  <Text variant="bodyLarge" numberOfLines={1}>{item.name}</Text>
-                  {item.brand ? (
+                  <Text variant="bodyLarge" numberOfLines={2}>{item.name}</Text>
+                  {item.brand && item.brand !== 'Ciqual (ANSES)' ? (
                     <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                       {item.brand}
                     </Text>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, StyleSheet, Pressable, ScrollView, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { View, StyleSheet, Pressable, Keyboard } from 'react-native';
 import { Text, TextInput, Button, useTheme } from 'react-native-paper';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -47,8 +47,7 @@ export default function OnboardingMensurationsScreen() {
   const canContinue = step === 'info' ? (nom && sexe) : true;
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={styles.content}>
           <Text variant="titleMedium" style={styles.step}>Étape 2/4</Text>
 
@@ -180,7 +179,6 @@ export default function OnboardingMensurationsScreen() {
           </Button>
         </View>
       </SafeAreaView>
-    </TouchableWithoutFeedback>
   );
 }
 

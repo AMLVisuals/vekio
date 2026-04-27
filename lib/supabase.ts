@@ -16,8 +16,8 @@ const storageAdapter = {
   },
 };
 
-const SUPABASE_URL = 'https://ejksceajiklhjpqdcpbi.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqa3NjZWFqaWtsaGpwcWRjcGJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4ODg0NjAsImV4cCI6MjA5MTQ2NDQ2MH0.wpgbGnEyZET672GSQ67f9__-n_ksrco_vhp4C0fuKSU';
+const SUPABASE_URL = 'https://mwbrwppbwucbeardeyyc.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13YnJ3cHBid3VjYmVhcmRleXljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyODE3ODYsImV4cCI6MjA5Mjg1Nzc4Nn0.KoGgjqsPbzZBgaBMMdFfbE1S1oNaHOmHdkEZyWHQJBs';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
