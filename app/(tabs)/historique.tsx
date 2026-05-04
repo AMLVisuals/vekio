@@ -1,15 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, SegmentedButtons, Card, useTheme, Button, Portal, Modal } from 'react-native-paper';
+import { Text, SegmentedButtons, Card, useTheme, Button, Portal, Modal, IconButton } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import Svg, { Rect, Line } from 'react-native-svg';
 import { colors, spacing, radius, shadow, palette } from '../../theme/tokens';
 import { supabase } from '../../lib/supabase';
 import { useUserStore } from '../../stores/userStore';
 import { useWeightStore } from '../../stores/weightStore';
-import { MEAL_LABELS, type MealType } from '../../stores/journalStore';
+import { type MealType } from '../../stores/journalStore';
 
 interface DayData {
   date: string;
@@ -20,14 +19,16 @@ interface DayData {
   entries: { nom: string; repas: MealType; calories: number; quantite_g: number }[];
 }
 
+// Ordre francais (Lun -> Dim). La valeur 0=dim est conservee pour compat
+// avec expo-notifications (weekday 1=dim, +1 dans scheduleWeeklyWeighIn).
 const JOURS = [
-  { value: 0, label: 'Dim' },
-  { value: 1, label: 'Lun' },
-  { value: 2, label: 'Mar' },
-  { value: 3, label: 'Mer' },
-  { value: 4, label: 'Jeu' },
-  { value: 5, label: 'Ven' },
-  { value: 6, label: 'Sam' },
+  { value: 1, label: 'Lu' },
+  { value: 2, label: 'Ma' },
+  { value: 3, label: 'Me' },
+  { value: 4, label: 'Je' },
+  { value: 5, label: 'Ve' },
+  { value: 6, label: 'Sa' },
+  { value: 0, label: 'Di' },
 ];
 
 const HEURES = ['07:00', '08:00', '09:00', '10:00', '18:00', '19:00', '20:00'];
@@ -47,10 +48,16 @@ export default function HistoriqueScreen() {
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
   const [streak, setStreak] = useState(0);
 
-  // Pop-up d'introduction (premiere visite uniquement)
+  // Pop-up d'introduction (premiere visite ou re-ouverture via bouton info)
   const [showIntro, setShowIntro] = useState(false);
-  const [introJour, setIntroJour] = useState<number>(1); // lundi
-  const [introHeure, setIntroHeure] = useState<string>('09:00');
+  const [introJour, setIntroJour] = useState<number>(profile?.jour_pesee_hebdo ?? 1);
+  const [introHeure, setIntroHeure] = useState<string>(profile?.heure_notification_pesee ?? '09:00');
+
+  const openIntro = () => {
+    setIntroJour(profile?.jour_pesee_hebdo ?? 1);
+    setIntroHeure(profile?.heure_notification_pesee ?? '09:00');
+    setShowIntro(true);
+  };
 
   useEffect(() => { loadHistory(); }, []);
 
@@ -153,14 +160,20 @@ export default function HistoriqueScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Animated.View entering={FadeInDown.duration(400)}>
+        <View style={styles.titleRow}>
           <Text variant="headlineLarge" style={[styles.title, { color: theme.colors.onBackground }]}>
             Statistiques
           </Text>
-        </Animated.View>
+          <IconButton
+            icon="information-outline"
+            size={22}
+            iconColor={theme.colors.onSurfaceVariant}
+            onPress={openIntro}
+            style={styles.infoBtn}
+          />
+        </View>
 
         {/* Carte evolution poids */}
-        <Animated.View entering={FadeInDown.duration(450).delay(80)}>
         <Card style={styles.card} mode="contained">
           <Card.Content>
             <Text variant="titleMedium" style={styles.cardTitle}>Mon évolution</Text>
@@ -233,7 +246,6 @@ export default function HistoriqueScreen() {
             </Button>
           </Card.Content>
         </Card>
-        </Animated.View>
 
         {/* Composition corporelle si dispo */}
         {lastWithComposition && (
@@ -286,6 +298,16 @@ export default function HistoriqueScreen() {
         </Text>
         <Card style={styles.card} mode="contained">
           <Card.Content>
+            {selectedDay && (
+              <View style={styles.tooltipRow}>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  {new Date(selectedDay.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                </Text>
+                <Text variant="titleSmall" style={{ color: theme.colors.primary, fontWeight: '600' }}>
+                  {Math.round(selectedDay.calories)} kcal
+                </Text>
+              </View>
+            )}
             <CalorieChart data={data} target={macros?.calories ?? 2000} onSelectDay={setSelectedDay} />
           </Card.Content>
         </Card>
@@ -300,41 +322,6 @@ export default function HistoriqueScreen() {
           </Card.Content>
         </Card>
 
-        {/* Detail du jour */}
-        {selectedDay && selectedDay.entries.length > 0 && (
-          <>
-            <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
-              {new Date(selectedDay.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </Text>
-            <Card style={styles.card} mode="contained">
-              <Card.Content>
-                <View style={styles.dayMacros}>
-                  <DayStat label="Calories" value={`${Math.round(selectedDay.calories)}`} unit="kcal" color={theme.colors.primary} />
-                  <DayStat label="Prot" value={`${Math.round(selectedDay.proteines)}`} unit="g" color="#4CAF50" />
-                  <DayStat label="Gluc" value={`${Math.round(selectedDay.glucides)}`} unit="g" color="#FF9800" />
-                  <DayStat label="Lip" value={`${Math.round(selectedDay.lipides)}`} unit="g" color="#2196F3" />
-                </View>
-
-                {(['petit_dejeuner', 'dejeuner', 'diner', 'collation'] as MealType[]).map((meal) => {
-                  const mealEntries = selectedDay.entries.filter((e) => e.repas === meal);
-                  if (mealEntries.length === 0) return null;
-                  return (
-                    <View key={meal} style={styles.mealSection}>
-                      <Text variant="titleSmall" style={{ fontWeight: '600', marginBottom: 4 }}>
-                        {MEAL_LABELS[meal]}
-                      </Text>
-                      {mealEntries.map((entry, i) => (
-                        <Text key={i} variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                          • {entry.nom} ({entry.quantite_g}g) — {Math.round(entry.calories)} kcal
-                        </Text>
-                      ))}
-                    </View>
-                  );
-                })}
-              </Card.Content>
-            </Card>
-          </>
-        )}
       </ScrollView>
 
       {/* Pop-up intro (premiere visite) */}
@@ -351,7 +338,7 @@ export default function HistoriqueScreen() {
               Bienvenue dans tes stats
             </Text>
             <Text variant="bodyMedium" style={[styles.modalDesc, { color: theme.colors.onSurfaceVariant }]}>
-              Cet onglet suit ton évolution dans le temps : poids, composition corporelle et nutrition. Plus tu loggues, plus c'est utile.
+              Cet onglet suit ton évolution dans le temps : poids, composition corporelle et nutrition. Plus tu enregistres, plus c'est utile.
             </Text>
 
             <Text variant="titleMedium" style={styles.modalSection}>Ton jour de pesée</Text>
@@ -517,7 +504,13 @@ function DayStat({ label, value, unit, color }: { label: string; value: string; 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scrollContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing['4xl'] },
-  title: { fontFamily: 'Inter_700Bold', color: colors.text, marginBottom: spacing.lg },
+  title: { fontFamily: 'Inter_700Bold', color: colors.text, flex: 1 },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  infoBtn: { margin: 0, marginLeft: -8 },
   card: {
     marginBottom: spacing.lg,
     borderRadius: radius.xl,
@@ -549,8 +542,13 @@ const styles = StyleSheet.create({
   compoRow: { flexDirection: 'row', justifyContent: 'space-around' },
   segmented: { marginBottom: 16 },
   sectionTitle: { fontWeight: '600', marginBottom: 8 },
-  dayMacros: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 16 },
-  mealSection: { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#eee' },
+  tooltipRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
 
   modal: {
     margin: 16,
@@ -561,8 +559,8 @@ const styles = StyleSheet.create({
   modalTitle: { fontWeight: 'bold', textAlign: 'center', marginBottom: 8 },
   modalDesc: { textAlign: 'center', marginBottom: 20, lineHeight: 20 },
   modalSection: { fontWeight: '600', marginTop: 16, marginBottom: 8 },
-  jourRow: { flexDirection: 'row', gap: 4, flexWrap: 'wrap' },
-  jourBtn: { flex: 1, minWidth: 40, borderRadius: 8 },
+  jourRow: { flexDirection: 'row', gap: 6 },
+  jourBtn: { flex: 1, minWidth: 0, borderRadius: 8 },
   heureRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   heureBtn: { borderRadius: 8 },
   tips: { marginTop: 16, borderRadius: 12 },
