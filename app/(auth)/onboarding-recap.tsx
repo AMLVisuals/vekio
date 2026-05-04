@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Button, Card, useTheme } from 'react-native-paper';
+import { Text, Button, Card, IconButton, useTheme } from 'react-native-paper';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { calculateNeeds, detecteIncoherenceIntention } from '../../lib/nutrition';
@@ -32,11 +32,9 @@ const SPORT_LABELS: Record<string, { label: string; emoji: string }> = {
   aucun:       { label: 'Aucun',       emoji: '😴' },
 };
 
-const FREQ_LABELS: Record<number, string> = {
-  1: '1 à 2 / sem',
-  3: '3 à 4 / sem',
-  5: '5+ / sem',
-};
+function freqLabel(n: number): string {
+  return n === 1 ? '1 jour / sem' : `${n} jours / sem`;
+}
 
 export default function OnboardingRecapScreen() {
   const theme = useTheme();
@@ -115,6 +113,9 @@ export default function OnboardingRecapScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={styles.topBar}>
+        <IconButton icon="arrow-left" size={24} onPress={() => router.back()} />
+      </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text variant="titleMedium" style={styles.step}>Étape 5/5</Text>
         <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
@@ -172,7 +173,7 @@ export default function OnboardingRecapScreen() {
                       {meta?.emoji} {meta?.label ?? s.type}
                     </Text>
                     <Text variant="bodyMedium" style={{ fontWeight: '600' }}>
-                      {FREQ_LABELS[s.frequence] ?? s.frequence}
+                      {freqLabel(s.frequence)}
                     </Text>
                   </View>
                 );
@@ -240,7 +241,8 @@ function MacroRow({ label, value, color }: { label: string; value: string; color
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingHorizontal: 24, paddingTop: 40, paddingBottom: 24 },
+  topBar: { paddingHorizontal: 8, paddingTop: 4 },
+  content: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 24 },
   step: { opacity: 0.5, marginBottom: 8 },
   title: { fontWeight: 'bold', marginBottom: 24 },
   card: { marginBottom: 12, borderRadius: 16 },

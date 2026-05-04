@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, StyleSheet, Pressable, ScrollView } from 'react-native';
-import { Text, Button, useTheme } from 'react-native-paper';
+import { Text, Button, IconButton, useTheme } from 'react-native-paper';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { SportType, Frequence } from '../../lib/nutrition';
@@ -21,11 +21,7 @@ const SPORTS: SportOption[] = [
   { type: 'aucun',       label: 'Aucun',       emoji: '😴' },
 ];
 
-const FREQUENCES: { value: Frequence; label: string }[] = [
-  { value: 1, label: '1 à 2 / sem' },
-  { value: 3, label: '3 à 4 / sem' },
-  { value: 5, label: '5+ / sem' },
-];
+const FREQUENCES: Frequence[] = [1, 2, 3, 4, 5, 6, 7];
 
 export default function OnboardingActiviteScreen() {
   const theme = useTheme();
@@ -43,7 +39,7 @@ export default function OnboardingActiviteScreen() {
     } else {
       next.delete('aucun');
       if (next.has(type)) next.delete(type);
-      else next.set(type, 3); // valeur par defaut : 3-4/sem
+      else next.set(type, 3); // 3 jours/sem par defaut
     }
     setSports(next);
   };
@@ -69,6 +65,9 @@ export default function OnboardingActiviteScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={styles.topBar}>
+        <IconButton icon="arrow-left" size={24} onPress={() => router.back()} />
+      </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text variant="titleMedium" style={styles.step}>Étape 4/5</Text>
         <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
@@ -113,7 +112,7 @@ export default function OnboardingActiviteScreen() {
         {sports.size > 0 && !sports.has('aucun') && (
           <>
             <Text variant="titleMedium" style={[styles.subSection, { color: theme.colors.onBackground }]}>
-              À quelle fréquence ?
+              Combien de fois par semaine ?
             </Text>
             {Array.from(sports.entries()).map(([type, freq]) => {
               const sport = SPORTS.find((s) => s.type === type)!;
@@ -121,31 +120,34 @@ export default function OnboardingActiviteScreen() {
                 <View key={type} style={styles.freqBlock}>
                   <View style={styles.freqHeader}>
                     <Text style={{ fontSize: 18 }}>{sport.emoji}</Text>
-                    <Text variant="titleSmall" style={{ fontWeight: '600' }}>{sport.label}</Text>
+                    <Text variant="titleSmall" style={{ fontWeight: '600', flex: 1 }}>{sport.label}</Text>
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                      {freq} jour{freq > 1 ? 's' : ''} / sem
+                    </Text>
                   </View>
                   <View style={styles.freqRow}>
                     {FREQUENCES.map((f) => {
-                      const isSelected = freq === f.value;
+                      const isSelected = freq === f;
                       return (
                         <Pressable
-                          key={f.value}
-                          onPress={() => setFrequence(type, f.value)}
+                          key={f}
+                          onPress={() => setFrequence(type, f)}
                           style={[
                             styles.freqOption,
                             {
                               borderColor: isSelected ? theme.colors.primary : theme.colors.outlineVariant,
-                              backgroundColor: isSelected ? theme.colors.primaryContainer : 'transparent',
+                              backgroundColor: isSelected ? theme.colors.primary : 'transparent',
                             },
                           ]}
                         >
                           <Text
-                            variant="bodySmall"
+                            variant="bodyMedium"
                             style={{
-                              fontWeight: '500',
-                              color: isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant,
+                              fontWeight: '600',
+                              color: isSelected ? '#FFFFFF' : theme.colors.onSurfaceVariant,
                             }}
                           >
-                            {f.label}
+                            {f}
                           </Text>
                         </Pressable>
                       );
@@ -175,7 +177,8 @@ export default function OnboardingActiviteScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingHorizontal: 24, paddingTop: 40, paddingBottom: 24 },
+  topBar: { paddingHorizontal: 8, paddingTop: 4 },
+  content: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 24 },
   step: { opacity: 0.5, marginBottom: 8 },
   title: { fontWeight: 'bold', marginBottom: 4 },
   subtitle: { marginBottom: 20 },

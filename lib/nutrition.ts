@@ -13,7 +13,7 @@ export type Sexe = 'homme' | 'femme';
 export type Objectif = 'perte' | 'maintien' | 'prise';
 export type Vitesse = 0.25 | 0.5 | 0.75;
 export type SportType = 'musculation' | 'cardio' | 'collectif' | 'martial' | 'yoga' | 'autre' | 'aucun';
-export type Frequence = 1 | 3 | 5; // 1-2/sem, 3-4/sem, 5+/sem (valeur centrale)
+export type Frequence = 1 | 2 | 3 | 4 | 5 | 6 | 7; // jours par semaine, valeur exacte
 export type Intention = 'bien_etre' | 'silhouette' | 'tonique';
 
 export interface Sport {
@@ -64,16 +64,28 @@ function calcBMR(p: Profile): number {
 //    On prend le facteur du sport principal (le plus frequent) puis on ajoute
 //    un bonus pour chaque sport secondaire.
 // -----------------------------------------------------------------------------
+// Facteurs d'activite affines par jour (avant on avait 3 paliers a fourchettes,
+// maintenant chaque jour de pratique compte). Calibres pour rester coherents
+// avec les paliers Mifflin-St Jeor (1.2 sedentaire ... 1.9 athlete).
 const FACTEUR_BASE: Record<Frequence, number> = {
-  1: 1.375, // 1-2x/sem
-  3: 1.55,  // 3-4x/sem
-  5: 1.725, // 5+/sem
+  1: 1.32,
+  2: 1.42,
+  3: 1.52,
+  4: 1.62,
+  5: 1.70,
+  6: 1.78,
+  7: 1.85,
 };
 
+// Bonus pour chaque sport secondaire (pondere selon sa propre frequence).
 const BONUS_SECONDAIRE: Record<Frequence, number> = {
-  1: 0.05,
-  3: 0.10,
+  1: 0.04,
+  2: 0.06,
+  3: 0.08,
+  4: 0.09,
   5: 0.10,
+  6: 0.11,
+  7: 0.12,
 };
 
 const FACTEUR_AUCUN = 1.2;

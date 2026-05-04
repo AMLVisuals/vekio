@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import { useUserStore } from '../../stores/userStore';
 import { useWeightStore } from '../../stores/weightStore';
 import { supabase } from '../../lib/supabase';
-import type { Intention } from '../../lib/nutrition';
+import type { Intention, Sport, SportType, Frequence } from '../../lib/nutrition';
 import { colors, spacing, radius, shadow } from '../../theme/tokens';
 import { useIntroPopup } from '../../lib/useIntroPopup';
 import IntroModal from '../../components/IntroModal';
@@ -29,6 +29,18 @@ const INTENTIONS: { value: Intention; label: string }[] = [
   { value: 'tonique',    label: '💪 Devenir plus tonique' },
 ];
 
+const SPORT_OPTIONS: { type: SportType; label: string; emoji: string }[] = [
+  { type: 'musculation', label: 'Musculation', emoji: '🏋️' },
+  { type: 'cardio',      label: 'Cardio',      emoji: '🏃' },
+  { type: 'collectif',   label: 'Sport collectif', emoji: '⚽' },
+  { type: 'martial',     label: 'Boxe / Arts martiaux', emoji: '🥋' },
+  { type: 'yoga',        label: 'Yoga / Pilates', emoji: '🧘' },
+  { type: 'autre',       label: 'Autre',       emoji: '🏅' },
+  { type: 'aucun',       label: 'Aucun',       emoji: '😴' },
+];
+
+const FREQUENCES: Frequence[] = [1, 2, 3, 4, 5, 6, 7];
+
 export default function ProfilScreen() {
   const theme = useTheme();
   const profile = useUserStore((s) => s.profile);
@@ -39,8 +51,53 @@ export default function ProfilScreen() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [editingMacros, setEditingMacros] = useState(false);
   const [editingObjectif, setEditingObjectif] = useState(false);
+  const [editingActivites, setEditingActivites] = useState(false);
+  const [editSports, setEditSports] = useState<Sport[]>(profile?.sports ?? []);
   const [saving, setSaving] = useState(false);
   const intro = useIntroPopup('profil');
+
+  const toggleEditSport = (type: SportType) => {
+    setEditSports((prev) => {
+      if (type === 'aucun') {
+        return prev.find((s) => s.type === 'aucun') ? [] : [{ type: 'aucun', frequence: 1 }];
+      }
+      const without = prev.filter((s) => s.type !== 'aucun');
+      const exists = without.find((s) => s.type === type);
+      if (exists) return without.filter((s) => s.type !== type);
+      return [...without, { type, frequence: 3 }];
+    });
+  };
+
+  const setEditSportFreq = (type: SportType, frequence: Frequence) => {
+    setEditSports((prev) => prev.map((s) => s.type === type ? { ...s, frequence } : s));
+  };
+
+  const handleSaveActivites = async () => {
+    if (!profile) return;
+    setSaving(true);
+    try {
+      await saveProfile({
+        nom: profile.nom,
+        age: profile.age,
+        poids: profile.poids,
+        taille: profile.taille,
+        sexe: profile.sexe,
+        objectif: profile.objectif,
+        vitesse_kg_semaine: profile.vitesse_kg_semaine ?? null,
+        date_naissance: profile.date_naissance ?? null,
+        sports: editSports,
+        masse_grasse_pct: profile.masse_grasse_pct,
+        masse_musculaire_pct: profile.masse_musculaire_pct,
+        masse_hydrique_pct: profile.masse_hydrique_pct,
+        poids_objectif: profile.poids_objectif ?? null,
+        intention: profile.intention ?? null,
+      });
+      setEditingActivites(false);
+    } catch {
+      Alert.alert('Erreur', 'Impossible de sauvegarder');
+    }
+    setSaving(false);
+  };
 
   // Champs profil
   const [nom, setNom] = useState(profile?.nom ?? '');
@@ -443,6 +500,134 @@ export default function ProfilScreen() {
             </Card>
           )}
 
+          {/* Mes activités sportives */}
+          <Card style={styles.card} mode="contained">
+            <Card.Content>
+              <View style={styles.cardHeader}>
+                <Text variant="titleMedium" style={styles.cardTitle}>Mes activités</Text>
+                {!editingActivites && (
+                  <Button compact mode="text" onPress={() => {
+                    setEditSports(profile?.sports ?? []);
+                    setEditingActivites(true);
+                  }}>
+                    Modifier
+                  </Button>
+                )}
+              </View>
+
+              {editingActivites ? (
+                <>
+                  <Text variant="bodySmall" style={{ color: colors.textMuted, marginBottom: spacing.md }}>
+                    Sélectionne tes sports puis indique combien de jours par semaine.
+                  </Text>
+
+                  <View style={styles.sportTagsRow}>
+                    {SPORT_OPTIONS.map((opt) => {
+                      const isSel = editSports.find((s) => s.type === opt.type);
+                      return (
+                        <Pressable
+                          key={opt.type}
+                          onPress={() => toggleEditSport(opt.type)}
+                          style={[
+                            styles.sportTag,
+                            {
+                              borderColor: isSel ? theme.colors.primary : colors.border,
+                              backgroundColor: isSel ? theme.colors.primaryContainer : 'transparent',
+                            },
+                          ]}
+                        >
+                          <Text style={{ fontSize: 16 }}>{opt.emoji}</Text>
+                          <Text variant="bodySmall" style={{ color: isSel ? theme.colors.onPrimaryContainer : colors.text }}>
+                            {opt.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+
+                  {editSports.length > 0 && !editSports.find((s) => s.type === 'aucun') && (
+                    <View style={{ marginTop: spacing.md }}>
+                      {editSports.map((s) => {
+                        const opt = SPORT_OPTIONS.find((o) => o.type === s.type);
+                        if (!opt) return null;
+                        return (
+                          <View key={s.type} style={styles.freqEditBlock}>
+                            <View style={styles.freqEditHeader}>
+                              <Text style={{ fontSize: 16 }}>{opt.emoji}</Text>
+                              <Text variant="bodyMedium" style={{ flex: 1, color: colors.text }}>{opt.label}</Text>
+                              <Text variant="bodySmall" style={{ color: colors.textMuted }}>
+                                {s.frequence} jour{s.frequence > 1 ? 's' : ''} / sem
+                              </Text>
+                            </View>
+                            <View style={styles.freqEditRow}>
+                              {FREQUENCES.map((f) => {
+                                const isSel = s.frequence === f;
+                                return (
+                                  <Pressable
+                                    key={f}
+                                    onPress={() => setEditSportFreq(s.type, f)}
+                                    style={[
+                                      styles.freqEditOption,
+                                      {
+                                        borderColor: isSel ? theme.colors.primary : colors.border,
+                                        backgroundColor: isSel ? theme.colors.primary : 'transparent',
+                                      },
+                                    ]}
+                                  >
+                                    <Text variant="bodySmall" style={{
+                                      color: isSel ? '#FFF' : colors.textMuted,
+                                      fontWeight: '600',
+                                    }}>
+                                      {f}
+                                    </Text>
+                                  </Pressable>
+                                );
+                              })}
+                            </View>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
+
+                  <View style={styles.editButtons}>
+                    <Button mode="text" onPress={() => {
+                      setEditingActivites(false);
+                      setEditSports(profile?.sports ?? []);
+                    }} style={{ flex: 1 }}>
+                      Annuler
+                    </Button>
+                    <Button mode="contained" onPress={handleSaveActivites} loading={saving} style={{ flex: 1 }}>
+                      Sauvegarder
+                    </Button>
+                  </View>
+                </>
+              ) : (
+                <>
+                  {profile?.sports && profile.sports.length > 0 && !profile.sports.find((s) => s.type === 'aucun') ? (
+                    profile.sports.map((s) => {
+                      const opt = SPORT_OPTIONS.find((o) => o.type === s.type);
+                      return (
+                        <View key={s.type} style={styles.infoRow}>
+                          <Text variant="bodyMedium" style={{ color: colors.textSecondary }}>
+                            {opt?.emoji} {opt?.label ?? s.type}
+                          </Text>
+                          <Text variant="bodyMedium" style={{ fontWeight: '600', color: colors.text }}>
+                            {s.frequence} jour{s.frequence > 1 ? 's' : ''} / sem
+                          </Text>
+                        </View>
+                      );
+                    })
+                  ) : (
+                    <Text variant="bodyMedium" style={{ color: colors.textMuted }}>
+                      Aucun sport régulier
+                    </Text>
+                  )}
+                </>
+              )}
+            </Card.Content>
+          </Card>
+
           {/* Objectifs macros */}
           <Card style={styles.card} mode="contained">
             <Card.Content>
@@ -584,6 +769,38 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     marginBottom: 8,
+  },
+  sportTagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  sportTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: 1.5,
+  },
+  freqEditBlock: { marginBottom: 12 },
+  freqEditHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  freqEditRow: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  freqEditOption: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    alignItems: 'center',
   },
   label: {
     marginBottom: 6,
