@@ -1,20 +1,18 @@
 // =============================================================================
 // IntroModal — pop-up d'introduction reutilisable par onglet
 // =============================================================================
-// Pattern unique pour les intros first-visit + reouverture via bouton info.
-// L'ecran consommateur passe le contenu pedagogique (sections), un emoji,
-// un titre, et eventuellement un children (ex: selecteurs jour/heure pour
-// Stats). Le bouton de validation prend une action et un label custom.
+// Tout le contenu doit etre visible sans scroll. Le modal s'agrandit pour
+// occuper la place necessaire (jusqu'a 95% de l'ecran).
 
 import { ReactNode } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text, Portal, Modal, Button } from 'react-native-paper';
-import { colors, spacing, radius } from '../theme/tokens';
+import { colors, spacing, radius, shadow } from '../theme/tokens';
 
 export interface IntroSection {
-  icon?: string;       // emoji ou caractere unique
-  title?: string;      // titre court de la section
-  body: string;        // corps explicatif
+  icon?: string;
+  title?: string;
+  body: string;
 }
 
 interface IntroModalProps {
@@ -23,13 +21,9 @@ interface IntroModalProps {
   title: string;
   description: string;
   sections?: IntroSection[];
-  /** Contenu custom additionnel (ex: selecteurs jour/heure de Stats) */
   children?: ReactNode;
-  /** Texte du bouton de validation */
   validateLabel?: string;
   onValidate: () => void;
-  /** Si true, l'utilisateur peut fermer en cliquant a cote (re-ouverture).
-   *  Si false (first-visit), il doit valider. */
   dismissable?: boolean;
   onDismiss?: () => void;
 }
@@ -54,46 +48,44 @@ export default function IntroModal({
         dismissable={dismissable}
         contentContainerStyle={styles.modal}
       >
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <Text style={styles.emoji}>{emoji}</Text>
-          <Text variant="headlineSmall" style={styles.title}>
-            {title}
-          </Text>
-          <Text variant="bodyMedium" style={styles.description}>
-            {description}
-          </Text>
+        <Text style={styles.emoji}>{emoji}</Text>
+        <Text variant="headlineSmall" style={styles.title}>
+          {title}
+        </Text>
+        <Text variant="bodyMedium" style={styles.description}>
+          {description}
+        </Text>
 
-          {sections.length > 0 && (
-            <View style={styles.sectionsBlock}>
-              {sections.map((s, i) => (
-                <View key={i} style={styles.section}>
-                  {s.icon && <Text style={styles.sectionIcon}>{s.icon}</Text>}
-                  <View style={{ flex: 1 }}>
-                    {s.title && (
-                      <Text variant="titleSmall" style={styles.sectionTitle}>
-                        {s.title}
-                      </Text>
-                    )}
-                    <Text variant="bodySmall" style={styles.sectionBody}>
-                      {s.body}
+        {sections.length > 0 && (
+          <View style={styles.sectionsBlock}>
+            {sections.map((s, i) => (
+              <View key={i} style={styles.section}>
+                {s.icon && <Text style={styles.sectionIcon}>{s.icon}</Text>}
+                <View style={{ flex: 1 }}>
+                  {s.title && (
+                    <Text variant="titleSmall" style={styles.sectionTitle}>
+                      {s.title}
                     </Text>
-                  </View>
+                  )}
+                  <Text variant="bodySmall" style={styles.sectionBody}>
+                    {s.body}
+                  </Text>
                 </View>
-              ))}
-            </View>
-          )}
+              </View>
+            ))}
+          </View>
+        )}
 
-          {children}
+        {children}
 
-          <Button
-            mode="contained"
-            onPress={onValidate}
-            style={styles.validateBtn}
-            contentStyle={{ paddingVertical: 6 }}
-          >
-            {validateLabel}
-          </Button>
-        </ScrollView>
+        <Button
+          mode="contained"
+          onPress={onValidate}
+          style={styles.validateBtn}
+          contentStyle={{ paddingVertical: 4 }}
+        >
+          {validateLabel}
+        </Button>
       </Modal>
     </Portal>
   );
@@ -101,38 +93,53 @@ export default function IntroModal({
 
 const styles = StyleSheet.create({
   modal: {
-    margin: spacing.lg,
-    padding: spacing['2xl'],
+    marginHorizontal: spacing.md,
+    marginVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xl,
     borderRadius: radius['2xl'],
     backgroundColor: colors.surface,
-    maxHeight: '90%',
+    overflow: 'hidden',
+    ...shadow.modal,
   },
-  emoji: { fontSize: 44, textAlign: 'center', marginBottom: spacing.sm },
+  emoji: { fontSize: 36, textAlign: 'center', marginBottom: spacing.xs },
   title: {
     fontFamily: 'Inter_700Bold',
     color: colors.text,
     textAlign: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   description: {
     color: colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: spacing.xl,
+    lineHeight: 19,
+    marginBottom: spacing.lg,
+    fontSize: 13,
   },
   sectionsBlock: {
-    gap: spacing.md,
-    marginBottom: spacing.lg,
+    gap: spacing.xs,
+    marginBottom: spacing.md,
   },
   section: {
     flexDirection: 'row',
-    gap: spacing.md,
-    padding: spacing.md,
+    gap: spacing.sm,
+    padding: spacing.sm,
     backgroundColor: colors.surfaceVariant,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
+    alignItems: 'flex-start',
   },
-  sectionIcon: { fontSize: 22 },
-  sectionTitle: { color: colors.text, marginBottom: 2 },
-  sectionBody: { color: colors.textSecondary, lineHeight: 18 },
-  validateBtn: { borderRadius: radius.md, marginTop: spacing.md },
+  sectionIcon: { fontSize: 18, marginTop: 1 },
+  sectionTitle: {
+    color: colors.text,
+    marginBottom: 1,
+    fontSize: 13,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  sectionBody: {
+    color: colors.textSecondary,
+    lineHeight: 16,
+    fontSize: 12,
+  },
+  validateBtn: { borderRadius: radius.md, marginTop: spacing.xs },
 });

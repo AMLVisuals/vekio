@@ -70,6 +70,6 @@ export const vekioTheme: MD3Theme = {
     inverseOnSurface: palette.neutral50,
     inversePrimary:   palette.primary300,
 
-    backdrop: 'rgba(15, 17, 15, 0.4)',
+    backdrop: 'rgba(15, 17, 15, 0.65)',
   },
 };
