@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert, Keyboard, TouchableWithoutFeedback, Pressable } from 'react-native';
-import { Text, Card, Button, TextInput, useTheme } from 'react-native-paper';
+import { Text, Card, Button, TextInput, IconButton, useTheme } from 'react-native-paper';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useUserStore } from '../../stores/userStore';
@@ -8,6 +8,8 @@ import { useWeightStore } from '../../stores/weightStore';
 import { supabase } from '../../lib/supabase';
 import type { Intention } from '../../lib/nutrition';
 import { colors, spacing, radius, shadow } from '../../theme/tokens';
+import { useIntroPopup } from '../../lib/useIntroPopup';
+import IntroModal from '../../components/IntroModal';
 
 const OBJECTIFS = [
   { value: 'perte', label: 'Perdre du poids' },
@@ -38,6 +40,7 @@ export default function ProfilScreen() {
   const [editingMacros, setEditingMacros] = useState(false);
   const [editingObjectif, setEditingObjectif] = useState(false);
   const [saving, setSaving] = useState(false);
+  const intro = useIntroPopup('profil');
 
   // Champs profil
   const [nom, setNom] = useState(profile?.nom ?? '');
@@ -230,9 +233,18 @@ export default function ProfilScreen() {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <Text variant="headlineLarge" style={[styles.title, { color: theme.colors.onBackground }]}>
-            Profil
-          </Text>
+          <View style={styles.titleRow}>
+            <Text variant="headlineLarge" style={[styles.title, { color: theme.colors.onBackground }]}>
+              Profil
+            </Text>
+            <IconButton
+              icon="information-outline"
+              size={22}
+              iconColor={colors.textMuted}
+              onPress={intro.open}
+              style={{ margin: 0 }}
+            />
+          </View>
 
           {/* Infos profil */}
           <Card style={styles.card} mode="contained">
@@ -454,6 +466,22 @@ export default function ProfilScreen() {
           </Card>
 
         </ScrollView>
+
+        {/* Pop-up intro Profil */}
+        <IntroModal
+          visible={intro.visible}
+          emoji="👤"
+          title="Tes infos et tes objectifs"
+          description="Ajuste ton profil et tes objectifs quand tu veux."
+          sections={[
+            { icon: '⚖️', title: 'Mes informations', body: "Ton poids, ta taille, ton âge, ton sexe — utilisés pour calculer tes besoins caloriques." },
+            { icon: '🎯', title: 'Mon objectif', body: "Modifie ton poids cible et ton intention motivationnelle. Une fois la cible atteinte, tes calories passent automatiquement en mode maintien." },
+            { icon: '🍽️', title: 'Objectifs journaliers', body: "Tes macros sont calculées automatiquement. Tu peux les ajuster manuellement si tu suis un régime spécifique." },
+          ]}
+          onValidate={intro.close}
+          dismissable
+          onDismiss={intro.close}
+        />
       </SafeAreaView>
     </TouchableWithoutFeedback>
   );
@@ -481,6 +509,11 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'Inter_700Bold',
     color: colors.text,
+    flex: 1,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: spacing.xl,
   },
   card: {

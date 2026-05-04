@@ -7,12 +7,15 @@ import { useJournalStore, MEAL_LABELS, type MealType, type JournalEntry } from '
 import { useUserStore } from '../../stores/userStore';
 import { colors, spacing, radius, shadow, palette } from '../../theme/tokens';
 import { haptic } from '../../lib/haptics';
+import { useIntroPopup } from '../../lib/useIntroPopup';
+import IntroModal from '../../components/IntroModal';
 
 const MEALS: MealType[] = ['petit_dejeuner', 'dejeuner', 'diner', 'collation'];
 
 export default function JournalScreen() {
   const { entries, loadFromSupabase } = useJournalStore();
   const macros = useUserStore((s) => s.macros);
+  const intro = useIntroPopup('journal');
 
   useEffect(() => {
     loadFromSupabase();
@@ -23,6 +26,18 @@ export default function JournalScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Bouton info en haut a droite */}
+        <View style={styles.topBar}>
+          <View style={{ flex: 1 }} />
+          <IconButton
+            icon="information-outline"
+            size={22}
+            iconColor={colors.textMuted}
+            onPress={intro.open}
+            style={{ margin: 0 }}
+          />
+        </View>
+
         {/* Mini-rappel discret : repere d'orientation, pas de duplication d'anneau */}
         <Text variant="bodyMedium" style={styles.miniSummary}>
           Aujourd'hui · {Math.round(totalCal)}{macros ? ` / ${macros.calories}` : ''} kcal
@@ -36,6 +51,22 @@ export default function JournalScreen() {
           />
         ))}
       </ScrollView>
+
+      {/* Pop-up intro Journal */}
+      <IntroModal
+        visible={intro.visible}
+        emoji="📋"
+        title="Tes repas du jour"
+        description="Tout ce que tu manges, organisé par repas."
+        sections={[
+          { icon: '➕', title: 'Ajouter un aliment', body: "Tape le bouton + sur n'importe quel repas pour rechercher un aliment ou scanner un code-barre." },
+          { icon: '🔄', title: 'Synchronisation auto', body: "Les calories et macros s'additionnent automatiquement dans l'anneau du Dashboard, en temps réel." },
+          { icon: '✨', title: 'Menus favoris', body: "Si tu manges souvent les mêmes plats, sauvegarde-les en menus depuis l'onglet Menus pour les ajouter en un tap." },
+        ]}
+        onValidate={intro.close}
+        dismissable
+        onDismiss={intro.close}
+      />
     </SafeAreaView>
   );
 }
@@ -111,6 +142,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.md,
     paddingBottom: spacing['4xl'],
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: -spacing.sm,
+    marginRight: -spacing.sm,
   },
   miniSummary: {
     color: colors.textMuted,

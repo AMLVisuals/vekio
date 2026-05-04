@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, SegmentedButtons, Card, useTheme, Button, Portal, Modal, IconButton } from 'react-native-paper';
+import { Text, SegmentedButtons, Card, useTheme, Button, IconButton } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import Svg, { Rect, Line } from 'react-native-svg';
@@ -9,6 +9,8 @@ import { supabase } from '../../lib/supabase';
 import { useUserStore } from '../../stores/userStore';
 import { useWeightStore } from '../../stores/weightStore';
 import { type MealType } from '../../stores/journalStore';
+import { useIntroPopup } from '../../lib/useIntroPopup';
+import IntroModal from '../../components/IntroModal';
 
 interface DayData {
   date: string;
@@ -37,7 +39,6 @@ export default function HistoriqueScreen() {
   const theme = useTheme();
   const profile = useUserStore((s) => s.profile);
   const macros = useUserStore((s) => s.macros);
-  const markIntroSeen = useUserStore((s) => s.markIntroSeen);
   const setPeseeSchedule = useUserStore((s) => s.setPeseeSchedule);
 
   const history = useWeightStore((s) => s.history);
@@ -48,16 +49,19 @@ export default function HistoriqueScreen() {
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
   const [streak, setStreak] = useState(0);
 
-  // Pop-up d'introduction (premiere visite ou re-ouverture via bouton info)
-  const [showIntro, setShowIntro] = useState(false);
+  // Pop-up d'introduction via hook reutilisable. Selecteurs jour/heure
+  // pre-remplis avec les valeurs courantes a chaque ouverture.
+  const intro = useIntroPopup('stats');
   const [introJour, setIntroJour] = useState<number>(profile?.jour_pesee_hebdo ?? 1);
   const [introHeure, setIntroHeure] = useState<string>(profile?.heure_notification_pesee ?? '09:00');
 
-  const openIntro = () => {
-    setIntroJour(profile?.jour_pesee_hebdo ?? 1);
-    setIntroHeure(profile?.heure_notification_pesee ?? '09:00');
-    setShowIntro(true);
-  };
+  // Synchronise les selecteurs avec les valeurs profil quand on (re)ouvre l'intro
+  useEffect(() => {
+    if (intro.visible) {
+      setIntroJour(profile?.jour_pesee_hebdo ?? 1);
+      setIntroHeure(profile?.heure_notification_pesee ?? '09:00');
+    }
+  }, [intro.visible, profile?.jour_pesee_hebdo, profile?.heure_notification_pesee]);
 
   useEffect(() => { loadHistory(); }, []);
 
@@ -67,12 +71,6 @@ export default function HistoriqueScreen() {
   useEffect(() => {
     loadData();
   }, [view]);
-
-  useEffect(() => {
-    if (profile && !profile.intro_seen?.stats) {
-      setShowIntro(true);
-    }
-  }, [profile?.id]);
 
   const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -129,8 +127,7 @@ export default function HistoriqueScreen() {
 
   const closeIntro = async () => {
     await setPeseeSchedule(introJour, introHeure);
-    await markIntroSeen('stats');
-    setShowIntro(false);
+    await intro.close();
   };
 
   // Donnees evolution poids
@@ -168,7 +165,7 @@ export default function HistoriqueScreen() {
             icon="information-outline"
             size={22}
             iconColor={theme.colors.onSurfaceVariant}
-            onPress={openIntro}
+            onPress={intro.open}
             style={styles.infoBtn}
           />
         </View>
@@ -324,89 +321,72 @@ export default function HistoriqueScreen() {
 
       </ScrollView>
 
-      {/* Pop-up intro (premiere visite) */}
-      <Portal>
-        <Modal
-          visible={showIntro}
-          onDismiss={() => {}}
-          dismissable={false}
-          contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
-        >
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={{ fontSize: 36, textAlign: 'center', marginBottom: 8 }}>📊</Text>
-            <Text variant="headlineSmall" style={[styles.modalTitle, { color: theme.colors.onSurface }]}>
-              Bienvenue dans tes stats
+      {/* Pop-up intro Stats — utilise le composant reutilisable + children custom */}
+      <IntroModal
+        visible={intro.visible}
+        emoji="📊"
+        title="Bienvenue dans tes stats"
+        description="Cet onglet suit ton évolution : poids, composition corporelle et nutrition. Plus tu enregistres, plus c'est utile."
+        onValidate={closeIntro}
+        dismissable
+        onDismiss={() => intro.close()}
+        validateLabel="C'est parti"
+      >
+        <Text variant="titleSmall" style={styles.modalSection}>Ton jour de pesée</Text>
+        <Text variant="bodySmall" style={{ color: colors.textMuted, marginBottom: spacing.md }}>
+          Choisis le jour où tu veux te peser chaque semaine. On te le rappellera.
+        </Text>
+        <View style={styles.jourRow}>
+          {JOURS.map((j) => {
+            const isSel = introJour === j.value;
+            return (
+              <Button
+                key={j.value}
+                mode={isSel ? 'contained' : 'outlined'}
+                compact
+                onPress={() => setIntroJour(j.value)}
+                style={styles.jourBtn}
+                contentStyle={{ paddingHorizontal: 0 }}
+              >
+                {j.label}
+              </Button>
+            );
+          })}
+        </View>
+
+        <Text variant="titleSmall" style={styles.modalSection}>Heure du rappel</Text>
+        <View style={styles.heureRow}>
+          {HEURES.map((h) => {
+            const isSel = introHeure === h;
+            return (
+              <Button
+                key={h}
+                mode={isSel ? 'contained' : 'outlined'}
+                compact
+                onPress={() => setIntroHeure(h)}
+                style={styles.heureBtn}
+              >
+                {h}
+              </Button>
+            );
+          })}
+        </View>
+
+        <Card mode="contained" style={[styles.tips, { backgroundColor: theme.colors.primaryContainer }]}>
+          <Card.Content>
+            <Text variant="titleSmall" style={{ fontWeight: '600', marginBottom: 8, color: theme.colors.onPrimaryContainer }}>
+              💡 Pour bien te peser
             </Text>
-            <Text variant="bodyMedium" style={[styles.modalDesc, { color: theme.colors.onSurfaceVariant }]}>
-              Cet onglet suit ton évolution dans le temps : poids, composition corporelle et nutrition. Plus tu enregistres, plus c'est utile.
+            <Text variant="bodySmall" style={{ lineHeight: 18, color: theme.colors.onPrimaryContainer }}>
+              • Le matin à jeun, après le passage aux toilettes{'\n'}
+              • Sans vêtements (ou toujours les mêmes){'\n'}
+              • Toujours le même jour de la semaine{'\n'}
+              • Sur une surface dure (pas un tapis){'\n'}
+              • Garde la même méthode pour des données comparables
             </Text>
-
-            <Text variant="titleMedium" style={styles.modalSection}>Ton jour de pesée</Text>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 12 }}>
-              Choisis le jour où tu veux te peser chaque semaine. On te le rappellera.
-            </Text>
-            <View style={styles.jourRow}>
-              {JOURS.map((j) => {
-                const isSel = introJour === j.value;
-                return (
-                  <Button
-                    key={j.value}
-                    mode={isSel ? 'contained' : 'outlined'}
-                    compact
-                    onPress={() => setIntroJour(j.value)}
-                    style={styles.jourBtn}
-                    contentStyle={{ paddingHorizontal: 0 }}
-                  >
-                    {j.label}
-                  </Button>
-                );
-              })}
-            </View>
-
-            <Text variant="titleMedium" style={styles.modalSection}>Heure du rappel</Text>
-            <View style={styles.heureRow}>
-              {HEURES.map((h) => {
-                const isSel = introHeure === h;
-                return (
-                  <Button
-                    key={h}
-                    mode={isSel ? 'contained' : 'outlined'}
-                    compact
-                    onPress={() => setIntroHeure(h)}
-                    style={styles.heureBtn}
-                  >
-                    {h}
-                  </Button>
-                );
-              })}
-            </View>
-
-            <Card mode="contained" style={[styles.tips, { backgroundColor: theme.colors.primaryContainer }]}>
-              <Card.Content>
-                <Text variant="titleSmall" style={{ fontWeight: '600', marginBottom: 8, color: theme.colors.onPrimaryContainer }}>
-                  💡 Pour bien te peser
-                </Text>
-                <Text variant="bodySmall" style={{ lineHeight: 18, color: theme.colors.onPrimaryContainer }}>
-                  • Le matin à jeun, après le passage aux toilettes{'\n'}
-                  • Sans vêtements (ou toujours les mêmes){'\n'}
-                  • Toujours le même jour de la semaine{'\n'}
-                  • Sur une surface dure (pas un tapis){'\n'}
-                  • Garde la même méthode pour des données comparables
-                </Text>
-              </Card.Content>
-            </Card>
-
-            <Button
-              mode="contained"
-              onPress={closeIntro}
-              style={styles.modalBtn}
-              contentStyle={{ paddingVertical: 6 }}
-            >
-              C'est parti !
-            </Button>
-          </ScrollView>
-        </Modal>
-      </Portal>
+          </Card.Content>
+        </Card>
+      </IntroModal>
     </SafeAreaView>
   );
 }

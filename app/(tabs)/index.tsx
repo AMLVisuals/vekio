@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, Keyboard } from 'react-native';
-import { Text, Portal, Modal, TextInput, Button, useTheme } from 'react-native-paper';
+import { Text, Portal, Modal, TextInput, Button, IconButton, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useJournalStore } from '../../stores/journalStore';
 import { useUserStore } from '../../stores/userStore';
 import { useHydratationStore } from '../../stores/hydratationStore';
-import { colors, spacing, radius, shadow, palette } from '../../theme/tokens';
+import { colors, spacing, radius, palette } from '../../theme/tokens';
 import { haptic } from '../../lib/haptics';
+import { useIntroPopup } from '../../lib/useIntroPopup';
 import DualGauge from '../../components/DualGauge';
+import IntroModal from '../../components/IntroModal';
 
 const PRESETS_ML = [150, 250, 500] as const;
 
@@ -26,6 +28,8 @@ export default function DashboardScreen() {
 
   const [showCustom, setShowCustom] = useState(false);
   const [customValue, setCustomValue] = useState('');
+
+  const intro = useIntroPopup('dashboard');
 
   useEffect(() => {
     loadFromSupabase();
@@ -73,13 +77,22 @@ export default function DashboardScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View>
-          <Text variant="headlineLarge" style={styles.greeting}>
-            {profile?.nom ? `Salut ${profile.nom}` : 'Vekio'}
-          </Text>
-          <Text variant="bodyMedium" style={styles.date}>
-            {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </Text>
+        <View style={styles.headerRow}>
+          <View style={{ flex: 1 }}>
+            <Text variant="headlineLarge" style={styles.greeting}>
+              {profile?.nom ? `Salut ${profile.nom}` : 'Vekio'}
+            </Text>
+            <Text variant="bodyMedium" style={styles.date}>
+              {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </Text>
+          </View>
+          <IconButton
+            icon="information-outline"
+            size={22}
+            iconColor={colors.textMuted}
+            onPress={intro.open}
+            style={{ margin: 0 }}
+          />
         </View>
 
         {/* Double anneau calories + hydratation */}
@@ -195,6 +208,22 @@ export default function DashboardScreen() {
           </View>
         </Modal>
       </Portal>
+
+      {/* Pop-up intro Dashboard */}
+      <IntroModal
+        visible={intro.visible}
+        emoji="🌿"
+        title="Bienvenue sur ton tableau de bord"
+        description="Tout ce qui compte au quotidien, sur un seul écran."
+        sections={[
+          { icon: '🟢', title: 'Anneau extérieur', body: "Tes calories du jour. Vert si tu es en dessous de l'objectif, orange dans la marge, rouge si dépassé." },
+          { icon: '💧', title: 'Anneau intérieur', body: "Ton hydratation. Tape les boutons sous l'anneau pour ajouter rapidement de l'eau, ou « + autre » pour une quantité custom." },
+          { icon: '📊', title: 'Macros', body: "Sous l'anneau, ton apport en protéines, glucides et lipides en barres colorées." },
+        ]}
+        onValidate={intro.close}
+        dismissable
+        onDismiss={intro.close}
+      />
     </SafeAreaView>
   );
 }
@@ -229,6 +258,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.md,
     paddingBottom: spacing['4xl'],
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   greeting: { color: colors.text, fontFamily: 'Inter_700Bold' },
   date: {

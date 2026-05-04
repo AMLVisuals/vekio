@@ -6,10 +6,14 @@ import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useMenusStore, type Menu } from '../../stores/menusStore';
 import { useJournalStore, type MealType } from '../../stores/journalStore';
+import { useIntroPopup } from '../../lib/useIntroPopup';
+import IntroModal from '../../components/IntroModal';
+import { colors } from '../../theme/tokens';
 
 export default function MenusScreen() {
   const theme = useTheme();
   const { menus, isLoading, loadMenus } = useMenusStore();
+  const intro = useIntroPopup('menus');
 
   useEffect(() => {
     loadMenus();
@@ -22,14 +26,23 @@ export default function MenusScreen() {
           <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
             Mes menus
           </Text>
-          <Button
-            mode="contained"
-            compact
-            onPress={() => router.push('/create-menu')}
-            icon="plus"
-          >
-            Créer
-          </Button>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <IconButton
+              icon="information-outline"
+              size={22}
+              iconColor={colors.textMuted}
+              onPress={intro.open}
+              style={{ margin: 0 }}
+            />
+            <Button
+              mode="contained"
+              compact
+              onPress={() => router.push('/create-menu')}
+              icon="plus"
+            >
+              Créer
+            </Button>
+          </View>
         </View>
 
         {menus.length === 0 && !isLoading && (
@@ -49,6 +62,22 @@ export default function MenusScreen() {
           ))}
         </View>
       </ScrollView>
+
+      {/* Pop-up intro Menus */}
+      <IntroModal
+        visible={intro.visible}
+        emoji="🍽️"
+        title="Tes menus favoris"
+        description="Sauvegarde tes plats récurrents et ajoute-les en un tap."
+        sections={[
+          { icon: '💾', title: 'Crée un menu', body: "Compose un plat avec ses aliments une seule fois (ex: ton petit-déjeuner habituel, ton bowl healthy)." },
+          { icon: '⚡', title: 'Réutilise', body: "Une fois créé, tape sur le menu et choisis un repas — tous ses aliments s'ajoutent à ton journal automatiquement." },
+          { icon: '📸', title: 'Partage Instagram', body: "Génère une fiche stylée avec photo et macros pour partager tes repas. Une fonctionnalité unique de Vekio." },
+        ]}
+        onValidate={intro.close}
+        dismissable
+        onDismiss={intro.close}
+      />
     </SafeAreaView>
   );
 }
