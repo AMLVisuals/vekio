@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, Pressable, ScrollView, Platform, Alert } from 'react-native';
-import { Text, TextInput, Button, useTheme } from 'react-native-paper';
+import { Text, TextInput, Button, IconButton, useTheme } from 'react-native-paper';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -88,6 +88,9 @@ export default function OnboardingProfilScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={styles.topBar}>
+        <IconButton icon="arrow-left" size={24} onPress={() => router.back()} />
+      </View>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -285,7 +288,8 @@ export default function OnboardingProfilScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingHorizontal: 24, paddingTop: 40, paddingBottom: 24 },
+  topBar: { paddingHorizontal: 8, paddingTop: 4 },
+  content: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 24 },
   step: { opacity: 0.5, marginBottom: 8 },
   title: { fontWeight: 'bold', marginBottom: 24 },
   healthBtn: {

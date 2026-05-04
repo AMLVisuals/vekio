@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, TextInput, Button, Card, useTheme } from 'react-native-paper';
+import { Text, TextInput, Button, Card, IconButton, useTheme } from 'react-native-paper';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -41,6 +41,9 @@ export default function OnboardingCompositionScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={styles.topBar}>
+        <IconButton icon="arrow-left" size={24} onPress={() => router.back()} />
+      </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text variant="titleMedium" style={styles.step}>Étape 3/5</Text>
         <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
@@ -122,7 +125,8 @@ export default function OnboardingCompositionScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingHorizontal: 24, paddingTop: 40, paddingBottom: 24 },
+  topBar: { paddingHorizontal: 8, paddingTop: 4 },
+  content: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 24 },
   step: { opacity: 0.5, marginBottom: 8 },
   title: { fontWeight: 'bold', marginBottom: 8 },
   subtitle: { marginBottom: 20, lineHeight: 20 },
