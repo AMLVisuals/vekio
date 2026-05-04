@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Pressable } from 'react-native';
-import { Text, TextInput, Button, Checkbox, useTheme } from 'react-native-paper';
+import { StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Pressable, View } from 'react-native';
+import { Text, TextInput, Button, useTheme } from 'react-native-paper';
 import { router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import { colors as tokens, palette } from '../../theme/tokens';
 
 export default function RegisterScreen() {
   const theme = useTheme();
@@ -62,7 +63,11 @@ export default function RegisterScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      <View style={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <Text variant="headlineLarge" style={[styles.title, { color: theme.colors.primary }]}>
           Créer un compte
         </Text>
@@ -104,16 +109,26 @@ export default function RegisterScreen() {
         />
 
         <Pressable onPress={() => setConsentCGU(!consentCGU)} style={styles.checkboxRow}>
-          <Checkbox status={consentCGU ? 'checked' : 'unchecked'} onPress={() => setConsentCGU(!consentCGU)} />
+          <View style={[
+            styles.checkbox,
+            consentCGU && { backgroundColor: palette.primary500, borderColor: palette.primary500 },
+          ]}>
+            {consentCGU && <Text style={styles.checkboxMark}>✓</Text>}
+          </View>
           <Text variant="bodySmall" style={styles.checkboxText}>
             J'accepte les Conditions Générales d'Utilisation et la Politique de Confidentialité
           </Text>
         </Pressable>
 
         <Pressable onPress={() => setConsentHealth(!consentHealth)} style={styles.checkboxRow}>
-          <Checkbox status={consentHealth ? 'checked' : 'unchecked'} onPress={() => setConsentHealth(!consentHealth)} />
+          <View style={[
+            styles.checkbox,
+            consentHealth && { backgroundColor: palette.primary500, borderColor: palette.primary500 },
+          ]}>
+            {consentHealth && <Text style={styles.checkboxMark}>✓</Text>}
+          </View>
           <Text variant="bodySmall" style={styles.checkboxText}>
-            J'autorise le traitement de mes données nutritionnelles et de santé (Article 9 RGPD)
+            J'autorise le traitement de mes données nutritionnelles et de santé (article 9 RGPD)
           </Text>
         </Pressable>
 
@@ -135,7 +150,7 @@ export default function RegisterScreen() {
         >
           Déjà un compte ? Se connecter
         </Button>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -145,9 +160,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
+    paddingVertical: 32,
   },
   title: {
     textAlign: 'center',
@@ -179,10 +195,29 @@ const styles = StyleSheet.create({
   checkboxRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    gap: 12,
+    marginBottom: 12,
+    paddingVertical: 4,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: palette.neutral400,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxMark: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 16,
   },
   checkboxText: {
     flex: 1,
-    opacity: 0.7,
+    color: tokens.textSecondary,
+    lineHeight: 17,
   },
 });
