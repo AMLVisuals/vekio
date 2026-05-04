@@ -23,6 +23,8 @@ export default function RootLayout() {
         <Stack.Screen name="create-menu" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="share-menu" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="subscription" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="peser" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="import-pesees" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       </Stack>
     </PaperProvider>
   );

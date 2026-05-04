@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, SegmentedButtons, Card, useTheme, Button, Portal, Modal } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useFocusEffect } from 'expo-router';
 import Svg, { Rect, Line } from 'react-native-svg';
 import { supabase } from '../../lib/supabase';
 import { useUserStore } from '../../stores/userStore';
@@ -50,6 +51,9 @@ export default function HistoriqueScreen() {
   const [introHeure, setIntroHeure] = useState<string>('09:00');
 
   useEffect(() => { loadHistory(); }, []);
+
+  // Recharge l'historique a chaque retour sur l'onglet (apres une nouvelle pesee)
+  useFocusEffect(useCallback(() => { loadHistory(); }, []));
 
   useEffect(() => {
     loadData();
@@ -131,6 +135,16 @@ export default function HistoriqueScreen() {
     ? (ecart > 0 ? '#4CAF50' : ecart < 0 ? '#E57373' : theme.colors.onSurface)
     : theme.colors.onSurface;
 
+  // Progression vers le poids cible
+  const poidsObjectif = profile?.poids_objectif;
+  const objectifAtteintLe = profile?.objectif_atteint_le;
+  let progressionPct = 0;
+  if (poidsObjectif !== null && poidsObjectif !== undefined && profile && poidsInitial !== poidsObjectif) {
+    const distanceTotale = Math.abs(poidsInitial - poidsObjectif);
+    const distanceParcourue = Math.abs(poidsInitial - poidsActuel);
+    progressionPct = Math.min(100, Math.max(0, Math.round((distanceParcourue / distanceTotale) * 100)));
+  }
+
   // Composition corporelle (derniere mesure)
   const lastWithComposition = [...history].reverse().find((h) => h.masse_grasse_pct !== undefined);
 
@@ -158,21 +172,59 @@ export default function HistoriqueScreen() {
                 </Text>
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>kg</Text>
               </View>
-              <View style={styles.evolutionCell}>
-                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>Écart</Text>
-                <Text variant="titleLarge" style={{ fontWeight: '600', color: ecartColor }}>
-                  {ecartLabel}
-                </Text>
-                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>kg</Text>
-              </View>
+              {poidsObjectif !== null && poidsObjectif !== undefined ? (
+                <View style={styles.evolutionCell}>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>Cible</Text>
+                  <Text variant="titleLarge" style={{ fontWeight: '600' }}>{poidsObjectif.toFixed(1)}</Text>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>kg</Text>
+                </View>
+              ) : (
+                <View style={styles.evolutionCell}>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>Écart</Text>
+                  <Text variant="titleLarge" style={{ fontWeight: '600', color: ecartColor }}>
+                    {ecartLabel}
+                  </Text>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>kg</Text>
+                </View>
+              )}
             </View>
+
+            {poidsObjectif !== null && poidsObjectif !== undefined && (
+              <View style={styles.progressBlock}>
+                <View style={[styles.progressBar, { backgroundColor: theme.colors.surfaceVariant }]}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${progressionPct}%`,
+                        backgroundColor: objectifAtteintLe ? '#4CAF50' : theme.colors.primary,
+                      },
+                    ]}
+                  />
+                </View>
+                <Text variant="bodySmall" style={[styles.progressLabel, { color: theme.colors.onSurfaceVariant }]}>
+                  {objectifAtteintLe
+                    ? '🎯 Objectif atteint, on maintient'
+                    : `${progressionPct}% du chemin parcouru`}
+                </Text>
+              </View>
+            )}
             <Button
               mode="contained-tonal"
               icon="scale-bathroom"
-              onPress={() => Alert.alert('Bientôt', 'L\'écran de pesée hebdomadaire arrive dans la prochaine mise à jour. Pour l\'instant tu peux modifier ton poids dans le profil.')}
+              onPress={() => router.push('/peser')}
               style={styles.addBtn}
             >
               Ajouter une pesée
+            </Button>
+            <Button
+              mode="text"
+              icon="upload"
+              onPress={() => router.push('/import-pesees')}
+              compact
+              style={styles.importLink}
+            >
+              Importer mes anciennes pesées
             </Button>
           </Card.Content>
         </Card>
@@ -471,6 +523,18 @@ const styles = StyleSheet.create({
   },
   evolutionCell: { alignItems: 'center', flex: 1 },
   addBtn: { borderRadius: 12, marginTop: 4 },
+  importLink: { alignSelf: 'center', marginTop: 4 },
+  progressBlock: { marginTop: 12, marginBottom: 4 },
+  progressBar: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressLabel: { textAlign: 'center', marginTop: 6 },
   compoRow: { flexDirection: 'row', justifyContent: 'space-around' },
   segmented: { marginBottom: 16 },
   sectionTitle: { fontWeight: '600', marginBottom: 8 },
