@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Keyboard, TouchableWithoutFeedback, Pressable } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Keyboard, Pressable } from 'react-native';
 import { Text, Card, Button, TextInput, IconButton, useTheme } from 'react-native-paper';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -215,24 +215,57 @@ export default function ProfilScreen() {
   const handleDeleteAccount = () => {
     Alert.alert(
       'Supprimer mon compte',
-      'Cette action est irréversible. Toutes tes données seront supprimées.',
+      'Cette action est définitive. Toutes tes données (profil, repas, menus, pesées, hydratation) seront supprimées de manière irréversible.',
       [
         { text: 'Annuler', style: 'cancel' },
         {
-          text: 'Supprimer',
+          text: 'Supprimer définitivement',
           style: 'destructive',
-          onPress: () => {
-            Alert.alert('Contact', 'Pour supprimer ton compte, envoie un email à contact@vekio.app');
-          },
+          onPress: confirmDeleteAccount,
         },
       ]
     );
   };
 
+  const confirmDeleteAccount = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        Alert.alert('Erreur', 'Session expirée. Reconnecte-toi puis réessaie.');
+        return;
+      }
+
+      const SUPABASE_URL = 'https://mwbrwppbwucbeardeyyc.supabase.co';
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/delete-account`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        Alert.alert('Erreur', `La suppression a échoué : ${text}. Réessaie ou contacte-nous.`);
+        return;
+      }
+
+      // Success — logout local et redirection
+      await logout();
+      router.replace('/(auth)/login');
+    } catch (e) {
+      Alert.alert('Erreur réseau', 'Impossible de joindre le serveur. Vérifie ta connexion.');
+    }
+  };
+
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
           <View style={styles.titleRow}>
             <Text variant="headlineLarge" style={[styles.title, { color: theme.colors.onBackground }]}>
               Profil
@@ -474,7 +507,7 @@ export default function ProfilScreen() {
           title="Tes infos et tes objectifs"
           description="Ajuste ton profil et tes objectifs quand tu veux."
           sections={[
-            { icon: '⚖️', title: 'Mes informations', body: "Ton poids, ta taille, ton âge, ton sexe — utilisés pour calculer tes besoins caloriques." },
+            { icon: '⚖️', title: 'Mes informations', body: "Ton poids, ta taille, ton âge et ton sexe, utilisés pour calculer tes besoins caloriques." },
             { icon: '🎯', title: 'Mon objectif', body: "Modifie ton poids cible et ton intention motivationnelle. Une fois la cible atteinte, tes calories passent automatiquement en mode maintien." },
             { icon: '🍽️', title: 'Objectifs journaliers', body: "Tes macros sont calculées automatiquement. Tu peux les ajuster manuellement si tu suis un régime spécifique." },
           ]}
@@ -482,8 +515,7 @@ export default function ProfilScreen() {
           dismissable
           onDismiss={intro.close}
         />
-      </SafeAreaView>
-    </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 }
 
