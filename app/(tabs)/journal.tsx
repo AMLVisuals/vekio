@@ -1,74 +1,66 @@
 import { useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { Text, Button, Card, IconButton, useTheme } from 'react-native-paper';
+import { Text, IconButton } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useJournalStore, MEAL_LABELS, type MealType, type JournalEntry } from '../../stores/journalStore';
 import { useUserStore } from '../../stores/userStore';
+import { colors, spacing, radius, shadow, palette } from '../../theme/tokens';
+import { haptic } from '../../lib/haptics';
 
 const MEALS: MealType[] = ['petit_dejeuner', 'dejeuner', 'diner', 'collation'];
+const MEAL_EMOJI: Record<MealType, string> = {
+  petit_dejeuner: '🥐',
+  dejeuner: '🥗',
+  diner: '🍽️',
+  collation: '🍎',
+};
 
 export default function JournalScreen() {
-  const theme = useTheme();
-  const { date, entries, isLoading, loadFromSupabase } = useJournalStore();
+  const { date, entries, loadFromSupabase } = useJournalStore();
   const macros = useUserStore((s) => s.macros);
 
   useEffect(() => {
     loadFromSupabase();
   }, []);
 
-  const totalCalories = entries.reduce((sum, e) => sum + e.calories, 0);
-  const totalProteines = entries.reduce((sum, e) => sum + e.proteines, 0);
-  const totalGlucides = entries.reduce((sum, e) => sum + e.glucides, 0);
-  const totalLipides = entries.reduce((sum, e) => sum + e.lipides, 0);
+  const totalCal = entries.reduce((sum, e) => sum + e.calories, 0);
+  const totalProt = entries.reduce((sum, e) => sum + e.proteines, 0);
+  const totalGluc = entries.reduce((sum, e) => sum + e.glucides, 0);
+  const totalLip = entries.reduce((sum, e) => sum + e.lipides, 0);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
-          Journal
-        </Text>
-        <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 20 }}>
-          {new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-        </Text>
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Animated.View entering={FadeInDown.duration(400)}>
+          <Text variant="headlineLarge" style={styles.title}>Journal</Text>
+          <Text variant="bodyMedium" style={styles.date}>
+            {new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </Text>
+        </Animated.View>
 
-        <Card style={[styles.totalCard, { backgroundColor: theme.colors.primaryContainer }]} mode="contained">
-          <Card.Content style={styles.totalContent}>
-            <Text variant="bodyMedium" style={{ color: theme.colors.onPrimaryContainer }}>
-              Total du jour
-            </Text>
-            <Text variant="headlineLarge" style={{ color: theme.colors.onPrimaryContainer, fontWeight: 'bold' }}>
-              {Math.round(totalCalories)}{macros ? ` / ${macros.calories}` : ''} kcal
-            </Text>
-            <View style={styles.macrosRow}>
-              <MacroPill
-                label="P"
-                current={Math.round(totalProteines)}
-                target={macros?.proteines_g}
-                color="#4CAF50"
-              />
-              <MacroPill
-                label="G"
-                current={Math.round(totalGlucides)}
-                target={macros?.glucides_g}
-                color="#FF9800"
-              />
-              <MacroPill
-                label="L"
-                current={Math.round(totalLipides)}
-                target={macros?.lipides_g}
-                color="#2196F3"
-              />
-            </View>
-          </Card.Content>
-        </Card>
+        {/* Carte total — hero */}
+        <Animated.View entering={FadeInDown.duration(450).delay(80)} style={styles.totalCard}>
+          <Text variant="bodySmall" style={styles.totalLabel}>Total du jour</Text>
+          <Text variant="displaySmall" style={styles.totalValue}>
+            {Math.round(totalCal)}
+            <Text style={styles.totalTarget}>{macros ? ` / ${macros.calories}` : ''} kcal</Text>
+          </Text>
+          <View style={styles.macrosRow}>
+            <MacroPill label="P" current={Math.round(totalProt)} target={macros?.proteines_g} color={colors.macroProteine} />
+            <MacroPill label="G" current={Math.round(totalGluc)} target={macros?.glucides_g} color={colors.macroGlucide} />
+            <MacroPill label="L" current={Math.round(totalLip)} target={macros?.lipides_g} color={colors.macroLipide} />
+          </View>
+        </Animated.View>
 
-        {MEALS.map((meal) => (
-          <MealSection
-            key={meal}
-            meal={meal}
-            entries={entries.filter((e) => e.repas === meal)}
-          />
+        {MEALS.map((meal, i) => (
+          <Animated.View key={meal} entering={FadeInDown.duration(450).delay(160 + i * 60)}>
+            <MealSection
+              meal={meal}
+              entries={entries.filter((e) => e.repas === meal)}
+            />
+          </Animated.View>
         ))}
       </ScrollView>
     </SafeAreaView>
@@ -76,61 +68,70 @@ export default function JournalScreen() {
 }
 
 function MealSection({ meal, entries }: { meal: MealType; entries: JournalEntry[] }) {
-  const theme = useTheme();
   const removeEntry = useJournalStore((s) => s.removeEntry);
   const mealCalories = entries.reduce((sum, e) => sum + e.calories, 0);
 
+  const handleAdd = () => {
+    haptic.light();
+    router.push({ pathname: '/search-food', params: { meal } });
+  };
+
+  const handleRemove = (id: string) => {
+    haptic.light();
+    removeEntry(id);
+  };
+
   return (
-    <Card style={styles.mealCard} mode="outlined">
-      <Card.Content>
-        <View style={styles.mealHeader}>
-          <View>
-            <Text variant="titleMedium" style={{ fontWeight: '600' }}>
-              {MEAL_LABELS[meal]}
-            </Text>
+    <View style={styles.mealCard}>
+      <View style={styles.mealHeader}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1 }}>
+          <Text style={{ fontSize: 22 }}>{MEAL_EMOJI[meal]}</Text>
+          <View style={{ flex: 1 }}>
+            <Text variant="titleMedium" style={{ color: colors.text }}>{MEAL_LABELS[meal]}</Text>
             {entries.length > 0 && (
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                {Math.round(mealCalories)} kcal
+              <Text variant="bodySmall" style={{ color: colors.textMuted, marginTop: 2 }}>
+                {Math.round(mealCalories)} kcal · {entries.length} {entries.length > 1 ? 'aliments' : 'aliment'}
               </Text>
             )}
           </View>
-          <Button
-            mode="contained-tonal"
-            compact
-            onPress={() => router.push({ pathname: '/search-food', params: { meal } })}
-          >
-            + Ajouter
-          </Button>
         </View>
+        <Pressable onPress={handleAdd} style={styles.addBtn} hitSlop={8}>
+          <Text variant="titleLarge" style={{ color: palette.primary600, lineHeight: 24 }}>+</Text>
+        </Pressable>
+      </View>
 
-        {entries.map((entry) => (
-          <View key={entry.id} style={[styles.entryRow, { borderTopColor: theme.colors.outlineVariant }]}>
-            <View style={{ flex: 1 }}>
-              <Text variant="bodyMedium" numberOfLines={1}>{entry.nom}</Text>
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                {entry.quantite_g}g — {Math.round(entry.calories)} kcal
-              </Text>
-              <View style={styles.entryMacros}>
-                <Text variant="bodySmall" style={{ color: '#4CAF50', fontWeight: '600' }}>P {entry.proteines}g</Text>
-                <Text variant="bodySmall" style={{ color: '#FF9800', fontWeight: '600' }}>G {entry.glucides}g</Text>
-                <Text variant="bodySmall" style={{ color: '#2196F3', fontWeight: '600' }}>L {entry.lipides}g</Text>
-              </View>
+      {entries.map((entry) => (
+        <View key={entry.id} style={styles.entryRow}>
+          <View style={{ flex: 1 }}>
+            <Text variant="bodyMedium" style={{ color: colors.text }} numberOfLines={1}>
+              {entry.nom}
+            </Text>
+            <Text variant="bodySmall" style={{ color: colors.textMuted, marginTop: 2 }}>
+              {entry.quantite_g} g · {Math.round(entry.calories)} kcal
+            </Text>
+            <View style={styles.entryMacros}>
+              <Text variant="bodySmall" style={{ color: colors.macroProteine }}>P {entry.proteines}g</Text>
+              <Text variant="bodySmall" style={{ color: colors.macroGlucide }}>G {entry.glucides}g</Text>
+              <Text variant="bodySmall" style={{ color: colors.macroLipide }}>L {entry.lipides}g</Text>
             </View>
-            <IconButton
-              icon="close"
-              size={18}
-              onPress={() => removeEntry(entry.id)}
-            />
           </View>
-        ))}
+          <IconButton
+            icon="close"
+            size={18}
+            iconColor={colors.textMuted}
+            onPress={() => handleRemove(entry.id)}
+          />
+        </View>
+      ))}
 
-        {entries.length === 0 && (
-          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 8, fontStyle: 'italic' }}>
-            Aucun aliment ajouté
+      {entries.length === 0 && (
+        <Pressable onPress={handleAdd} style={styles.emptyState}>
+          <Text variant="bodySmall" style={{ color: colors.textMuted }}>
+            Aucun aliment — touche pour ajouter
           </Text>
-        )}
-      </Card.Content>
-    </Card>
+        </Pressable>
+      )}
+    </View>
   );
 }
 
@@ -138,65 +139,97 @@ function MacroPill({ label, current, target, color }: { label: string; current: 
   return (
     <View style={styles.macroPill}>
       <View style={[styles.macroDot, { backgroundColor: color }]} />
-      <Text variant="bodyMedium" style={{ fontWeight: 'bold' }}>
-        {label} {current}{target ? ` / ${target}` : ''}g
+      <Text variant="labelLarge" style={{ color: colors.text }}>
+        {label} {current}<Text style={{ color: colors.textMuted }}>{target ? ` / ${target}` : ''}g</Text>
       </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing['4xl'],
   },
-  title: {
-    fontWeight: 'bold',
+  title: { color: colors.text, fontFamily: 'Inter_700Bold' },
+  date: {
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xl,
+    textTransform: 'capitalize',
   },
   totalCard: {
-    marginBottom: 20,
-  },
-  totalContent: {
+    backgroundColor: palette.primary500,
+    borderRadius: radius['2xl'],
+    padding: spacing.xl,
     alignItems: 'center',
-    paddingVertical: 8,
+    marginBottom: spacing.xl,
+  },
+  totalLabel: { color: 'rgba(255,255,255,0.85)' },
+  totalValue: {
+    color: '#FFFFFF',
+    fontFamily: 'Inter_700Bold',
+    marginTop: spacing.xs,
+  },
+  totalTarget: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.85)',
   },
   macrosRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 16,
-    marginTop: 10,
+    flexWrap: 'wrap',
+    gap: spacing.md,
+    marginTop: spacing.md,
   },
   macroPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: spacing.xs,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
   },
-  macroDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
+  macroDot: { width: 8, height: 8, borderRadius: 4 },
   mealCard: {
-    marginBottom: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    ...shadow.card,
   },
   mealHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  addBtn: {
+    width: 36, height: 36,
+    borderRadius: radius.full,
+    backgroundColor: palette.primary100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   entryRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 10,
-    marginTop: 10,
+    paddingTop: spacing.md,
+    marginTop: spacing.md,
     borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
   entryMacros: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 2,
+    gap: spacing.md,
+    marginTop: spacing.xs,
+  },
+  emptyState: {
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
+    marginTop: spacing.sm,
   },
 });

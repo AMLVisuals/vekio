@@ -8,6 +8,7 @@ import { useUserStore } from '../../stores/userStore';
 import { useWeightStore } from '../../stores/weightStore';
 import { requestNotificationPermission, scheduleLocalReminders } from '../../lib/notifications';
 import type { Profile, Sport, Vitesse, Intention } from '../../lib/nutrition';
+import { haptic } from '../../lib/haptics';
 
 const OBJECTIF_LABELS: Record<string, string> = {
   perte: 'Perdre du poids',
@@ -70,6 +71,7 @@ export default function OnboardingRecapScreen() {
   const macros = calculateNeeds(profile);
 
   const handleSave = async () => {
+    haptic.medium();
     setLoading(true);
     setError('');
 

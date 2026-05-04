@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { View, StyleSheet, FlatList, Pressable } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
+import { haptic } from '../lib/haptics';
 
 interface ScrollPickerProps {
   values: number[];
@@ -34,7 +35,9 @@ export default function ScrollPicker({ values, selected, onSelect, unit, label }
     const offsetY = event.nativeEvent.contentOffset.y;
     const index = Math.round(offsetY / ITEM_HEIGHT);
     const clampedIndex = Math.max(0, Math.min(index, values.length - 1));
-    onSelect(values[clampedIndex]);
+    const newValue = values[clampedIndex];
+    if (newValue !== selected) haptic.selection();
+    onSelect(newValue);
   };
 
   return (

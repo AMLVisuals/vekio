@@ -7,6 +7,8 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import ScrollPicker from '../components/ScrollPicker';
 import { useUserStore } from '../stores/userStore';
 import { useWeightStore, type WeightEntry } from '../stores/weightStore';
+import { colors, spacing, radius, shadow, palette } from '../theme/tokens';
+import { haptic } from '../lib/haptics';
 
 function todayStr(): string {
   return new Date().toISOString().split('T')[0];
@@ -177,6 +179,7 @@ export default function PeserScreen() {
     if (!validerComposition()) return;
     if (!profile) return;
 
+    haptic.medium();
     setSaving(true);
     try {
       const compoFields = afficheCompo
@@ -216,8 +219,10 @@ export default function PeserScreen() {
       }
 
       if (celebrateModal) {
+        haptic.heavy();
         setCelebrate(true);
       } else {
+        haptic.success();
         const fb = construireFeedback(poidsKg, derniereAvant, profile.objectif);
         if (fb) setFeedback(fb);
         else router.back(); // Pas de comparaison possible (1ere pesee), on ferme directement

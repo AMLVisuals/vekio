@@ -1,19 +1,22 @@
 import { useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { Text, Card, useTheme } from 'react-native-paper';
+import { Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useJournalStore } from '../../stores/journalStore';
 import { useUserStore } from '../../stores/userStore';
 import { useHydratationStore } from '../../stores/hydratationStore';
-
-function getProgressColor(ratio: number): string {
-  if (ratio < 0.9) return '#4CAF50';
-  if (ratio <= 1.1) return '#FF9800';
-  return '#E57373';
-}
+import { colors, spacing, radius, shadow, palette } from '../../theme/tokens';
+import { haptic } from '../../lib/haptics';
 
 const GLASS_ML = 250;
+
+function getProgressColor(ratio: number): string {
+  if (ratio < 0.9) return colors.success;
+  if (ratio <= 1.1) return colors.warning;
+  return colors.error;
+}
 
 export default function DashboardScreen() {
   const theme = useTheme();
@@ -34,121 +37,123 @@ export default function DashboardScreen() {
 
   const calTarget = macros?.calories ?? 2000;
   const calRatio = totalCal / calTarget;
+  const remaining = Math.max(calTarget - Math.round(totalCal), 0);
 
   const totalGlasses = Math.ceil(objectifMl / GLASS_ML);
   const filledGlasses = Math.floor(totalMl / GLASS_ML);
+  const hydroPct = Math.min(100, Math.round((totalMl / objectifMl) * 100));
+
+  const handleAddWater = () => { haptic.light(); addWater(GLASS_ML); };
+  const handleRemoveWater = () => { haptic.light(); removeWater(GLASS_ML); };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
-          {profile?.nom ? `Salut ${profile.nom}` : 'Vekio'}
-        </Text>
-        <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 24 }}>
-          {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-        </Text>
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <Animated.View entering={FadeInDown.duration(400)}>
+          <Text variant="headlineLarge" style={styles.greeting}>
+            {profile?.nom ? `Salut ${profile.nom}` : 'Vekio'}
+          </Text>
+          <Text variant="bodyMedium" style={styles.date}>
+            {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </Text>
+        </Animated.View>
 
-        {/* Jauge circulaire calories */}
-        <View style={styles.gaugeContainer}>
+        {/* Anneau calories */}
+        <Animated.View entering={FadeInDown.duration(450).delay(80)} style={styles.gaugeContainer}>
           <CalorieGauge
             current={Math.round(totalCal)}
             target={calTarget}
+            remaining={remaining}
             color={getProgressColor(calRatio)}
           />
-        </View>
+        </Animated.View>
 
-        {/* Barres macros */}
-        <View style={styles.macrosContainer}>
-          <MacroBar
-            label="Protéines"
-            current={Math.round(totalProt)}
-            target={macros?.proteines_g ?? 0}
-            unit="g"
-            color="#4CAF50"
-          />
-          <MacroBar
-            label="Glucides"
-            current={Math.round(totalGluc)}
-            target={macros?.glucides_g ?? 0}
-            unit="g"
-            color="#FF9800"
-          />
-          <MacroBar
-            label="Lipides"
-            current={Math.round(totalLip)}
-            target={macros?.lipides_g ?? 0}
-            unit="g"
-            color="#2196F3"
-          />
-        </View>
+        {/* Macros */}
+        <Animated.View entering={FadeInDown.duration(450).delay(160)}>
+          <Text variant="titleMedium" style={styles.sectionTitle}>Macros du jour</Text>
+          <View style={styles.macrosContainer}>
+            <MacroBar
+              label="Protéines"
+              current={Math.round(totalProt)}
+              target={macros?.proteines_g ?? 0}
+              color={colors.macroProteine}
+            />
+            <MacroBar
+              label="Glucides"
+              current={Math.round(totalGluc)}
+              target={macros?.glucides_g ?? 0}
+              color={colors.macroGlucide}
+            />
+            <MacroBar
+              label="Lipides"
+              current={Math.round(totalLip)}
+              target={macros?.lipides_g ?? 0}
+              color={colors.macroLipide}
+            />
+          </View>
+        </Animated.View>
 
         {/* Hydratation */}
-        <Card style={styles.hydratationCard} mode="outlined">
-          <Card.Content>
-            <View style={styles.hydratationHeader}>
-              <Text variant="titleMedium" style={{ fontWeight: '600' }}>
-                Hydratation
-              </Text>
-              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                {totalMl} / {objectifMl} ml
+        <Animated.View entering={FadeInDown.duration(450).delay(240)} style={styles.hydratationCard}>
+          <View style={styles.hydratationHeader}>
+            <View>
+              <Text variant="titleMedium" style={styles.hydratationTitle}>Hydratation</Text>
+              <Text variant="bodySmall" style={styles.hydratationSubtitle}>
+                {totalMl} / {objectifMl} ml · {hydroPct}%
               </Text>
             </View>
-
-            <View style={styles.glassesRow}>
-              {Array.from({ length: totalGlasses }, (_, i) => {
-                const isFilled = i < filledGlasses;
-                return (
-                  <Pressable
-                    key={i}
-                    onPress={() => {
-                      if (isFilled && i === filledGlasses - 1) {
-                        removeWater(GLASS_ML);
-                      } else if (!isFilled && i === filledGlasses) {
-                        addWater(GLASS_ML);
-                      }
-                    }}
-                  >
-                    <Text style={{ fontSize: 28, opacity: isFilled ? 1 : 0.2 }}>
-                      💧
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
             <View style={styles.hydratationActions}>
               <Pressable
-                onPress={() => removeWater(GLASS_ML)}
-                style={[styles.hydratationBtn, { backgroundColor: theme.colors.surfaceVariant }]}
+                onPress={handleRemoveWater}
+                style={[styles.hydratationBtn, { backgroundColor: colors.surfaceVariant }]}
               >
-                <Text variant="titleMedium">−</Text>
+                <Text variant="titleLarge" style={{ color: colors.text, lineHeight: 24 }}>−</Text>
               </Pressable>
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                {GLASS_ML} ml par verre
-              </Text>
               <Pressable
-                onPress={() => addWater(GLASS_ML)}
-                style={[styles.hydratationBtn, { backgroundColor: '#E3F2FD' }]}
+                onPress={handleAddWater}
+                style={[styles.hydratationBtn, { backgroundColor: palette.primary500 }]}
               >
-                <Text variant="titleMedium" style={{ color: '#1976D2' }}>+</Text>
+                <Text variant="titleLarge" style={{ color: '#FFF', lineHeight: 24 }}>+</Text>
               </Pressable>
             </View>
-          </Card.Content>
-        </Card>
+          </View>
+
+          <View style={styles.glassesRow}>
+            {Array.from({ length: totalGlasses }, (_, i) => {
+              const isFilled = i < filledGlasses;
+              return (
+                <Pressable
+                  key={i}
+                  onPress={() => {
+                    haptic.light();
+                    if (isFilled && i === filledGlasses - 1) removeWater(GLASS_ML);
+                    else if (!isFilled && i === filledGlasses) addWater(GLASS_ML);
+                  }}
+                  style={[
+                    styles.glass,
+                    {
+                      backgroundColor: isFilled ? colors.water : 'transparent',
+                      borderColor: isFilled ? colors.water : palette.neutral300,
+                    },
+                  ]}
+                />
+              );
+            })}
+          </View>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function CalorieGauge({ current, target, color }: { current: number; target: number; color: string }) {
-  const theme = useTheme();
-  const size = 180;
-  const strokeWidth = 14;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
+function CalorieGauge({ current, target, remaining, color }: { current: number; target: number; remaining: number; color: string }) {
+  const size = 200;
+  const strokeWidth = 16;
+  const r = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * r;
   const progress = Math.min(current / target, 1);
   const strokeDashoffset = circumference * (1 - progress);
-  const remaining = Math.max(target - current, 0);
 
   return (
     <View style={{ alignItems: 'center' }}>
@@ -156,15 +161,15 @@ function CalorieGauge({ current, target, color }: { current: number; target: num
         <Circle
           cx={size / 2}
           cy={size / 2}
-          r={radius}
-          stroke={theme.colors.surfaceVariant}
+          r={r}
+          stroke={palette.neutral200}
           strokeWidth={strokeWidth}
           fill="none"
         />
         <Circle
           cx={size / 2}
           cy={size / 2}
-          r={radius}
+          r={r}
           stroke={color}
           strokeWidth={strokeWidth}
           fill="none"
@@ -175,9 +180,13 @@ function CalorieGauge({ current, target, color }: { current: number; target: num
         />
       </Svg>
       <View style={styles.gaugeText}>
-        <Text variant="headlineMedium" style={{ fontWeight: 'bold' }}>{current}</Text>
-        <Text variant="bodySmall" style={{ opacity: 0.6 }}>/ {target} kcal</Text>
-        <Text variant="bodySmall" style={{ color, marginTop: 4 }}>
+        <Text variant="displaySmall" style={{ color: colors.text, fontFamily: 'Inter_700Bold' }}>
+          {current}
+        </Text>
+        <Text variant="bodySmall" style={{ color: colors.textMuted, marginTop: 2 }}>
+          / {target} kcal
+        </Text>
+        <Text variant="labelMedium" style={{ color, marginTop: spacing.xs }}>
           {remaining > 0 ? `${remaining} restantes` : 'Objectif atteint'}
         </Text>
       </View>
@@ -185,27 +194,25 @@ function CalorieGauge({ current, target, color }: { current: number; target: num
   );
 }
 
-function MacroBar({ label, current, target, unit, color }: {
-  label: string; current: number; target: number; unit: string; color: string;
+function MacroBar({ label, current, target, color }: {
+  label: string; current: number; target: number; color: string;
 }) {
-  const theme = useTheme();
   const ratio = target > 0 ? current / target : 0;
   const progressWidth = `${Math.min(ratio * 100, 100)}%`;
-  const barColor = getProgressColor(ratio);
 
   return (
     <View style={styles.macroBarContainer}>
       <View style={styles.macroBarHeader}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: color }} />
-          <Text variant="bodyMedium">{label}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} />
+          <Text variant="bodyMedium" style={{ color: colors.text }}>{label}</Text>
         </View>
-        <Text variant="bodyMedium" style={{ fontWeight: '600' }}>
-          {current} / {target}{unit}
+        <Text variant="labelLarge" style={{ color: colors.text }}>
+          {current}<Text style={{ color: colors.textMuted }}> / {target} g</Text>
         </Text>
       </View>
-      <View style={[styles.macroBarBg, { backgroundColor: theme.colors.surfaceVariant }]}>
-        <View style={[styles.macroBarFill, { width: progressWidth as any, backgroundColor: barColor }]} />
+      <View style={styles.macroBarBg}>
+        <View style={[styles.macroBarFill, { width: progressWidth as any, backgroundColor: color }]} />
       </View>
     </View>
   );
@@ -214,33 +221,43 @@ function MacroBar({ label, current, target, unit, color }: {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing['4xl'],
   },
-  title: {
-    fontWeight: 'bold',
+  greeting: {
+    color: colors.text,
+    fontFamily: 'Inter_700Bold',
+  },
+  date: {
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+    marginBottom: spacing['2xl'],
+    textTransform: 'capitalize',
   },
   gaugeContainer: {
     alignItems: 'center',
-    marginBottom: 28,
+    marginBottom: spacing['3xl'],
   },
   gaugeText: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    top: 0, left: 0, right: 0, bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  sectionTitle: {
+    color: colors.text,
+    marginBottom: spacing.md,
+  },
   macrosContainer: {
-    gap: 16,
-    marginBottom: 28,
+    gap: spacing.lg,
+    marginBottom: spacing['3xl'],
   },
   macroBarContainer: {
-    gap: 6,
+    gap: spacing.sm,
   },
   macroBarHeader: {
     flexDirection: 'row',
@@ -248,40 +265,48 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   macroBarBg: {
-    height: 10,
-    borderRadius: 5,
+    height: 8,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceVariant,
     overflow: 'hidden',
   },
   macroBarFill: {
     height: '100%',
-    borderRadius: 5,
+    borderRadius: radius.sm,
   },
   hydratationCard: {
-    marginBottom: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    ...shadow.card,
   },
   hydratationHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.lg,
+  },
+  hydratationTitle: { color: colors.text },
+  hydratationSubtitle: { color: colors.textMuted, marginTop: 2 },
+  hydratationActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  hydratationBtn: {
+    width: 40, height: 40,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   glassesRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'center',
-    marginBottom: 12,
+    gap: spacing.sm,
   },
-  hydratationActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  hydratationBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+  glass: {
+    width: 24,
+    height: 32,
+    borderRadius: radius.sm,
+    borderWidth: 2,
   },
 });
