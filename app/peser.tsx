@@ -252,7 +252,12 @@ export default function PeserScreen() {
         <View style={{ width: 48 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Date */}
         <Pressable
           onPress={() => setShowDatePicker(true)}

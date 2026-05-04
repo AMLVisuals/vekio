@@ -194,9 +194,10 @@ export const useUserStore = create<UserState>((set, get) => ({
     };
     const macros = calculateNeeds(profileForCalc);
 
-    const objectifAtteintLe = macros.objectifAtteint
-      ? new Date().toISOString().split('T')[0]
-      : null;
+    // On ne pose PAS objectif_atteint_le a l'inscription, meme si la cible
+    // est deja techniquement atteinte. La celebration aura lieu lors de la
+    // premiere pesee dans la zone — c'est plus marquant et plus juste UX.
+    const objectifAtteintLe = null;
 
     // Sauvegarde profil
     const { error: profileError } = await supabase

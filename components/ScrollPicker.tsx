@@ -57,6 +57,7 @@ export default function ScrollPicker({ values, selected, onSelect, unit, label }
           showsVerticalScrollIndicator={false}
           snapToInterval={ITEM_HEIGHT}
           decelerationRate="fast"
+          nestedScrollEnabled
           onMomentumScrollEnd={handleScrollEnd}
           contentContainerStyle={{
             paddingVertical: ITEM_HEIGHT * Math.floor(VISIBLE_ITEMS / 2),
