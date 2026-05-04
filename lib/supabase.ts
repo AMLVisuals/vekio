@@ -1,18 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
+import * as SecureStore from 'expo-secure-store';
 
-// Stockage en memoire — compatible Expo Go
-// MMKV sera utilise dans le build de production
-const memoryStorage = new Map<string, string>();
-
+// Stockage chiffre natif (Keychain iOS / Keystore Android) compatible Expo Go.
+// La session Supabase persiste entre les reloads — l'utilisateur reste connecte
+// jusqu'a un logout explicite. Plus securise qu'AsyncStorage.
 const storageAdapter = {
-  getItem: (key: string) => {
-    return memoryStorage.get(key) ?? null;
+  getItem: async (key: string) => {
+    try { return await SecureStore.getItemAsync(key); }
+    catch { return null; }
   },
-  setItem: (key: string, value: string) => {
-    memoryStorage.set(key, value);
+  setItem: async (key: string, value: string) => {
+    try { await SecureStore.setItemAsync(key, value); }
+    catch {}
   },
-  removeItem: (key: string) => {
-    memoryStorage.delete(key);
+  removeItem: async (key: string) => {
+    try { await SecureStore.deleteItemAsync(key); }
+    catch {}
   },
 };
 
