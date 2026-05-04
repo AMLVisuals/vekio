@@ -6,6 +6,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { useMenusStore } from '../stores/menusStore';
+import { colors as tokens } from '../theme/tokens';
 
 export default function ShareMenuScreen() {
   const theme = useTheme();
@@ -80,10 +81,10 @@ export default function ShareMenuScreen() {
               ))}
 
               <View style={styles.shareMacros}>
-                <MacroBox label="kcal" value={Math.round(menu.total_calories)} bg={cardBg} color={textColor} />
-                <MacroBox label="Prot" value={Math.round(menu.total_proteines)} bg={cardBg} color={textColor} unit="g" />
-                <MacroBox label="Gluc" value={Math.round(menu.total_glucides)} bg={cardBg} color={textColor} unit="g" />
-                <MacroBox label="Lip" value={Math.round(menu.total_lipides)} bg={cardBg} color={textColor} unit="g" />
+                <MacroBox label="kcal" value={Math.round(menu.total_calories)} bg={cardBg} color={textColor} dotColor={isDark ? '#FFFFFF' : tokens.text} />
+                <MacroBox label="Prot" value={Math.round(menu.total_proteines)} bg={cardBg} color={textColor} unit="g" dotColor={tokens.macroProteine} />
+                <MacroBox label="Gluc" value={Math.round(menu.total_glucides)} bg={cardBg} color={textColor} unit="g" dotColor={tokens.macroGlucide} />
+                <MacroBox label="Lip" value={Math.round(menu.total_lipides)} bg={cardBg} color={textColor} unit="g" dotColor={tokens.macroLipide} />
               </View>
 
               <Text style={[styles.shareLogo, { color: subtextColor }]}>Vekio</Text>
@@ -109,9 +110,10 @@ export default function ShareMenuScreen() {
   );
 }
 
-function MacroBox({ label, value, bg, color, unit }: { label: string; value: number; bg: string; color: string; unit?: string }) {
+function MacroBox({ label, value, bg, color, unit, dotColor }: { label: string; value: number; bg: string; color: string; unit?: string; dotColor: string }) {
   return (
     <View style={[styles.macroBox, { backgroundColor: bg }]}>
+      <View style={[styles.macroDot, { backgroundColor: dotColor }]} />
       <Text style={{ fontSize: 18, fontWeight: 'bold', color }}>{value}{unit ?? ''}</Text>
       <Text style={{ fontSize: 11, color, opacity: 0.6 }}>{label}</Text>
     </View>
@@ -177,6 +179,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderRadius: 10,
+    gap: 4,
+  },
+  macroDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginBottom: 2,
   },
   shareLogo: {
     textAlign: 'center',

@@ -3,7 +3,6 @@ import { View, StyleSheet, ScrollView, Alert, Keyboard, TouchableWithoutFeedback
 import { Text, Card, Button, TextInput, useTheme } from 'react-native-paper';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useUserStore } from '../../stores/userStore';
 import { useWeightStore } from '../../stores/weightStore';
 import { supabase } from '../../lib/supabase';
@@ -231,14 +230,11 @@ export default function ProfilScreen() {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <Animated.View entering={FadeInDown.duration(400)}>
-            <Text variant="headlineLarge" style={[styles.title, { color: theme.colors.onBackground }]}>
-              Profil
-            </Text>
-          </Animated.View>
+          <Text variant="headlineLarge" style={[styles.title, { color: theme.colors.onBackground }]}>
+            Profil
+          </Text>
 
           {/* Infos profil */}
-          <Animated.View entering={FadeInDown.duration(450).delay(80)}>
           <Card style={styles.card} mode="contained">
             <Card.Content>
               <View style={styles.cardHeader}>
@@ -296,11 +292,9 @@ export default function ProfilScreen() {
               )}
             </Card.Content>
           </Card>
-          </Animated.View>
 
           {/* Mon objectif (cible + intention) — masque si maintien sans intention */}
           {(profile?.objectif === 'perte' || profile?.objectif === 'prise' || profile?.intention) && (
-            <Animated.View entering={FadeInDown.duration(450).delay(160)}>
             <Card style={styles.card} mode="contained">
               <Card.Content>
                 <View style={styles.cardHeader}>
@@ -402,11 +396,9 @@ export default function ProfilScreen() {
                 )}
               </Card.Content>
             </Card>
-            </Animated.View>
           )}
 
           {/* Objectifs macros */}
-          <Animated.View entering={FadeInDown.duration(450).delay(240)}>
           <Card style={styles.card} mode="contained">
             <Card.Content>
               <View style={styles.cardHeader}>
@@ -444,10 +436,8 @@ export default function ProfilScreen() {
               )}
             </Card.Content>
           </Card>
-          </Animated.View>
 
           {/* Compte */}
-          <Animated.View entering={FadeInDown.duration(450).delay(320)}>
           <Card style={styles.card} mode="contained">
             <Card.Content>
               <Text variant="titleMedium" style={styles.cardTitle}>Compte</Text>
@@ -462,7 +452,6 @@ export default function ProfilScreen() {
               </Button>
             </Card.Content>
           </Card>
-          </Animated.View>
 
         </ScrollView>
       </SafeAreaView>

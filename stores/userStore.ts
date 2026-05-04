@@ -21,6 +21,8 @@ interface UserProfile {
   poids_objectif: number | null;
   intention: Intention | null;
   objectif_atteint_le: string | null;
+  jour_pesee_hebdo: number;
+  heure_notification_pesee: string;
   intro_seen: Record<string, boolean>;
   isPro: boolean;
 }
@@ -144,6 +146,8 @@ export const useUserStore = create<UserState>((set, get) => ({
         poids_objectif: profileData.poids_objectif !== null && profileData.poids_objectif !== undefined ? Number(profileData.poids_objectif) : null,
         intention: (profileData.intention as Intention | null) ?? null,
         objectif_atteint_le: profileData.objectif_atteint_le ?? null,
+        jour_pesee_hebdo: profileData.jour_pesee_hebdo ?? 1,
+        heure_notification_pesee: (profileData.heure_notification_pesee as string)?.slice(0, 5) ?? '09:00',
         intro_seen: (profileData.intro_seen as Record<string, boolean>) ?? {},
         isPro: profileData.is_pro ?? false,
       },
@@ -253,6 +257,8 @@ export const useUserStore = create<UserState>((set, get) => ({
         poids_objectif: data.poids_objectif ?? null,
         intention: data.intention ?? null,
         objectif_atteint_le: objectifAtteintLe,
+        jour_pesee_hebdo: 1,
+        heure_notification_pesee: '09:00',
         intro_seen: {},
       },
       macros,
@@ -286,6 +292,13 @@ export const useUserStore = create<UserState>((set, get) => ({
       .from('profiles')
       .update({ jour_pesee_hebdo: jour, heure_notification_pesee: heure })
       .eq('user_id', user.id);
+    // Mise a jour locale du profil pour que les pop-ups d'intro pre-remplissent
+    // avec les valeurs courantes.
+    set((s) => ({
+      profile: s.profile
+        ? { ...s.profile, jour_pesee_hebdo: jour, heure_notification_pesee: heure }
+        : null,
+    }));
     // Reprogramme la notification hebdo. Si la permission n'a pas ete accordee,
     // l'appel echoue silencieusement — pas un probleme bloquant.
     try {
