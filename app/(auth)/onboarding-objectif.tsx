@@ -16,13 +16,21 @@ const VITESSES = [
   { value: '0.75', label: 'Rapidement', detail: '0,75 kg/semaine', tip: 'Demande de la rigueur' },
 ] as const;
 
+const INTENTIONS = [
+  { value: 'bien_etre',  label: 'Me sentir mieux',     emoji: '🌱', description: 'Bien-être global, sans pression' },
+  { value: 'silhouette', label: 'Affiner ma silhouette', emoji: '✨', description: 'Perdre du gras, gagner en aisance' },
+  { value: 'tonique',    label: 'Devenir plus tonique',  emoji: '💪', description: 'Construire du muscle visible' },
+] as const;
+
 export default function OnboardingObjectifScreen() {
   const theme = useTheme();
   const [objectif, setObjectif] = useState<string>('');
   const [vitesse, setVitesse] = useState<string>('0.5');
+  const [intention, setIntention] = useState<string>('');
 
   const needsVitesse = objectif === 'perte' || objectif === 'prise';
-  const canContinue = objectif && (!needsVitesse || vitesse);
+  const needsIntention = needsVitesse;
+  const canContinue = objectif && (!needsVitesse || vitesse) && (!needsIntention || intention);
 
   const handleNext = () => {
     router.push({
@@ -30,6 +38,7 @@ export default function OnboardingObjectifScreen() {
       params: {
         objectif,
         vitesse: needsVitesse ? vitesse : '0',
+        intention: needsIntention ? intention : '',
       },
     });
   };
@@ -137,6 +146,59 @@ export default function OnboardingObjectifScreen() {
             </View>
           </>
         )}
+
+        {needsIntention && (
+          <>
+            <Text variant="titleMedium" style={[styles.subtitle, { color: theme.colors.onBackground }]}>
+              Ton intention ?
+            </Text>
+            <Text variant="bodySmall" style={[styles.subtitleHelper, { color: theme.colors.onSurfaceVariant }]}>
+              Le « pourquoi » derrière ton objectif. Ça nous aide à personnaliser tes conseils.
+            </Text>
+            <View style={styles.options}>
+              {INTENTIONS.map((i) => {
+                const isSelected = intention === i.value;
+                return (
+                  <Pressable
+                    key={i.value}
+                    onPress={() => setIntention(i.value)}
+                    style={[
+                      styles.option,
+                      {
+                        borderColor: isSelected ? theme.colors.primary : theme.colors.outlineVariant,
+                        backgroundColor: isSelected ? theme.colors.primaryContainer : theme.colors.surface,
+                      },
+                    ]}
+                  >
+                    <View style={styles.optionRow}>
+                      <Text style={styles.emoji}>{i.emoji}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          variant="titleMedium"
+                          style={{
+                            fontWeight: '600',
+                            color: isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
+                          }}
+                        >
+                          {i.label}
+                        </Text>
+                        <Text
+                          variant="bodySmall"
+                          style={{
+                            color: isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant,
+                            marginTop: 2,
+                          }}
+                        >
+                          {i.description}
+                        </Text>
+                      </View>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </>
+        )}
       </ScrollView>
 
       <View style={styles.footer}>
@@ -163,7 +225,8 @@ const styles = StyleSheet.create({
   },
   step: { opacity: 0.5, marginBottom: 8 },
   title: { fontWeight: 'bold', marginBottom: 24 },
-  subtitle: { fontWeight: '600', marginTop: 28, marginBottom: 16 },
+  subtitle: { fontWeight: '600', marginTop: 28, marginBottom: 6 },
+  subtitleHelper: { marginBottom: 14, lineHeight: 18 },
   options: { gap: 12 },
   option: {
     padding: 18,

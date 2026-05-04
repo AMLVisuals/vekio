@@ -3,16 +3,22 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Button, Card, useTheme } from 'react-native-paper';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { calculateNeeds } from '../../lib/nutrition';
+import { calculateNeeds, detecteIncoherenceIntention } from '../../lib/nutrition';
 import { useUserStore } from '../../stores/userStore';
 import { useWeightStore } from '../../stores/weightStore';
 import { requestNotificationPermission, scheduleLocalReminders } from '../../lib/notifications';
-import type { Profile, Sport, Vitesse } from '../../lib/nutrition';
+import type { Profile, Sport, Vitesse, Intention } from '../../lib/nutrition';
 
 const OBJECTIF_LABELS: Record<string, string> = {
   perte: 'Perdre du poids',
   maintien: 'Maintenir mon poids',
   prise: 'Prendre de la masse',
+};
+
+const INTENTION_LABELS: Record<string, string> = {
+  bien_etre: '🌱 Me sentir mieux',
+  silhouette: '✨ Affiner ma silhouette',
+  tonique: '💪 Devenir plus tonique',
 };
 
 const SPORT_LABELS: Record<string, { label: string; emoji: string }> = {
@@ -45,6 +51,8 @@ export default function OnboardingRecapScreen() {
   const masseGrasse = params.masse_grasse_pct ? Number(params.masse_grasse_pct) : undefined;
   const masseMusculaire = params.masse_musculaire_pct ? Number(params.masse_musculaire_pct) : undefined;
   const masseHydrique = params.masse_hydrique_pct ? Number(params.masse_hydrique_pct) : undefined;
+  const poidsObjectif = params.poids_objectif ? Number(params.poids_objectif) : undefined;
+  const intention = (params.intention || undefined) as Intention | undefined;
 
   const profile: Profile = {
     sexe: params.sexe as Profile['sexe'],
@@ -55,6 +63,8 @@ export default function OnboardingRecapScreen() {
     vitesse,
     sports,
     masseGrassePct: masseGrasse,
+    poidsObjectif,
+    intention,
   };
 
   const macros = calculateNeeds(profile);
@@ -77,6 +87,8 @@ export default function OnboardingRecapScreen() {
         masse_grasse_pct: masseGrasse,
         masse_musculaire_pct: masseMusculaire,
         masse_hydrique_pct: masseHydrique,
+        poids_objectif: poidsObjectif ?? null,
+        intention: intention ?? null,
       });
 
       // Premiere pesee = celle de l'inscription, avec composition si renseignee
@@ -115,9 +127,34 @@ export default function OnboardingRecapScreen() {
             <InfoRow label="Poids" value={`${profile.poids} kg`} />
             <InfoRow label="Taille" value={`${profile.taille} cm`} />
             <InfoRow label="Objectif" value={OBJECTIF_LABELS[profile.objectif] ?? profile.objectif} />
+            {poidsObjectif !== undefined && (
+              <InfoRow label="Cible" value={`${poidsObjectif} kg`} />
+            )}
             {vitesse && <InfoRow label="Rythme" value={`${vitesse.toString().replace('.', ',')} kg/semaine`} />}
+            {intention && <InfoRow label="Intention" value={INTENTION_LABELS[intention] ?? intention} />}
           </Card.Content>
         </Card>
+
+        {detecteIncoherenceIntention(intention, sports) && (
+          <Card style={[styles.card, { backgroundColor: '#FFF8E1' }]} mode="contained">
+            <Card.Content>
+              <Text variant="titleSmall" style={{ fontWeight: '600', color: '#F57C00', marginBottom: 6 }}>
+                ⚠️ Pour devenir plus tonique
+              </Text>
+              <Text variant="bodySmall" style={{ color: '#5D4037', lineHeight: 18, marginBottom: 10 }}>
+                Construire du muscle visible demande de la musculation, l'alimentation seule ne suffira pas. Tu peux en faire à la maison sans matériel (pompes, squats, gainage).
+              </Text>
+              <Button
+                mode="text"
+                onPress={() => router.back()}
+                compact
+                textColor="#F57C00"
+              >
+                Ajuster mes activités
+              </Button>
+            </Card.Content>
+          </Card>
+        )}
 
         <Card style={styles.card} mode="outlined">
           <Card.Content>
