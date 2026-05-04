@@ -146,7 +146,7 @@ export default function PeserScreen() {
       return {
         ecart, joursEcoules, emoji: '🌱',
         titre: `+${ecartAbs.toFixed(1)} kg cette semaine`,
-        message: 'Pas d\'inquiétude, le poids fluctue naturellement. Reste régulier sur tes calories — la tendance globale compte plus qu\'une pesée.',
+        message: 'Pas d\'inquiétude, le poids fluctue naturellement. Reste régulier sur tes calories, la tendance globale compte plus qu\'une pesée.',
       };
     }
 

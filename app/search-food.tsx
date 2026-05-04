@@ -98,7 +98,7 @@ export default function SearchFoodScreen() {
 
       <View style={styles.searchRow}>
         <TextInput
-          placeholder="Rechercher un aliment..."
+          placeholder="Rechercher un aliment…"
           value={query}
           onChangeText={setQuery}
           onSubmitEditing={handleSearch}

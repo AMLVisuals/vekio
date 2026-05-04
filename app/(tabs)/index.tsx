@@ -186,7 +186,7 @@ export default function DashboardScreen() {
             onChangeText={setCustomValue}
             mode="outlined"
             keyboardType="numeric"
-            placeholder="ex : 330"
+            placeholder="Ex. 330"
             autoFocus
             right={<TextInput.Affix text="ml" />}
             returnKeyType="done"

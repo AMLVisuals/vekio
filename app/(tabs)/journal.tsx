@@ -128,7 +128,7 @@ function MealSection({ meal, entries }: { meal: MealType; entries: JournalEntry[
       {entries.length === 0 && (
         <Pressable onPress={handleAdd} style={styles.emptyState}>
           <Text variant="bodySmall" style={{ color: colors.textMuted }}>
-            Aucun aliment — touche pour ajouter
+            Aucun aliment, touche pour ajouter
           </Text>
         </Pressable>
       )}

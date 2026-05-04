@@ -117,7 +117,7 @@ export default function CreateMenuScreen() {
             value={nom}
             onChangeText={setNom}
             mode="outlined"
-            placeholder="Ex: Petit-déj protéiné"
+            placeholder="Ex. Petit-déjeuner protéiné"
             returnKeyType="done"
             onSubmitEditing={Keyboard.dismiss}
             style={styles.input}
@@ -167,7 +167,7 @@ export default function CreateMenuScreen() {
                     <View style={{ flex: 1 }}>
                       <Text variant="bodyMedium" numberOfLines={1}>{aliment.nom}</Text>
                       <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                        {aliment.quantite_g}g — {Math.round(aliment.calories)} kcal
+                        {aliment.quantite_g}g · {Math.round(aliment.calories)} kcal
                       </Text>
                     </View>
                     <IconButton icon="close" size={16} onPress={() => removeAliment(index)} />

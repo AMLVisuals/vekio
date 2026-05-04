@@ -70,8 +70,8 @@ export default function MenusScreen() {
         title="Tes menus favoris"
         description="Sauvegarde tes plats récurrents et ajoute-les en un tap."
         sections={[
-          { icon: '💾', title: 'Crée un menu', body: "Compose un plat avec ses aliments une seule fois (ex: ton petit-déjeuner habituel, ton bowl healthy)." },
-          { icon: '⚡', title: 'Réutilise', body: "Une fois créé, tape sur le menu et choisis un repas — tous ses aliments s'ajoutent à ton journal automatiquement." },
+          { icon: '💾', title: 'Crée un menu', body: "Compose un plat avec ses aliments une seule fois, par exemple ton petit-déjeuner habituel ou ton bowl healthy." },
+          { icon: '⚡', title: 'Réutilise', body: "Une fois créé, tape sur le menu et choisis un repas. Tous ses aliments s'ajoutent à ton journal automatiquement." },
           { icon: '📸', title: 'Partage Instagram', body: "Génère une fiche stylée avec photo et macros pour partager tes repas. Une fonctionnalité unique de Vekio." },
         ]}
         onValidate={intro.close}
@@ -108,7 +108,7 @@ function MenuCard({ menu }: { menu: Menu }) {
   const handlePress = () => {
     Alert.alert(
       menu.nom,
-      `${Math.round(menu.total_calories)} kcal — ${menu.aliments.length} aliment(s)`,
+      `${Math.round(menu.total_calories)} kcal · ${menu.aliments.length} aliment${menu.aliments.length > 1 ? 's' : ''}`,
       [
         { text: 'Petit-déj', onPress: () => handleUseMenu('petit_dejeuner') },
         { text: 'Déjeuner', onPress: () => handleUseMenu('dejeuner') },

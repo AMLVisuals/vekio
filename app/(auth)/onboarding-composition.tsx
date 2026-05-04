@@ -80,7 +80,7 @@ export default function OnboardingCompositionScreen() {
         </Text>
 
         <TextInput
-          label="Masse musculaire (%) — optionnel"
+          label="Masse musculaire optionnelle (%)"
           value={masseMusculaire}
           onChangeText={setMasseMusculaire}
           mode="outlined"
@@ -91,7 +91,7 @@ export default function OnboardingCompositionScreen() {
         />
 
         <TextInput
-          label="Masse hydrique (%) — optionnel"
+          label="Masse hydrique optionnelle (%)"
           value={masseHydrique}
           onChangeText={setMasseHydrique}
           mode="outlined"

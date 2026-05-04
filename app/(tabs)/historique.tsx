@@ -438,7 +438,7 @@ function CalorieChart({ data, target, onSelectDay }: { data: DayData[]; target: 
           {data.length > 0 ? new Date(data[0].date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''}
         </Text>
         <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.6 }}>
-          — objectif {target} kcal/j —
+          objectif {target} kcal/j
         </Text>
         <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
           {data.length > 0 ? new Date(data[data.length - 1].date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''}
