@@ -38,18 +38,30 @@ export async function requestNotificationPermission(): Promise<boolean> {
   return true;
 }
 
+const DAILY_MEAL_KIND = 'daily_meal';
+
+async function cancelExistingDailyMeals() {
+  const all = await Notifications.getAllScheduledNotificationsAsync();
+  for (const n of all) {
+    if ((n.content.data as { kind?: string } | undefined)?.kind === DAILY_MEAL_KIND) {
+      await Notifications.cancelScheduledNotificationAsync(n.identifier);
+    }
+  }
+}
+
 /**
  * Programme les rappels quotidiens (notifications locales)
  */
 export async function scheduleLocalReminders() {
-  // Annuler les rappels existants avant de reprogrammer
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  // Annule uniquement les rappels repas existants (preserve la pesee hebdo).
+  await cancelExistingDailyMeals();
 
   // Rappel 12h30 — dejeuner
   await Notifications.scheduleNotificationAsync({
     content: {
       title: 'Vekio',
       body: "Tu n'as pas encore logué ton déjeuner ! 🍽️",
+      data: { kind: DAILY_MEAL_KIND },
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DAILY,
@@ -64,6 +76,7 @@ export async function scheduleLocalReminders() {
     content: {
       title: 'Vekio',
       body: "N'oublie pas de loguer ton dîner ! 🌙",
+      data: { kind: DAILY_MEAL_KIND },
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DAILY,
@@ -79,4 +92,54 @@ export async function scheduleLocalReminders() {
  */
 export async function cancelAllReminders() {
   await Notifications.cancelAllScheduledNotificationsAsync();
+}
+
+// =============================================================================
+// Pesee hebdomadaire — notification recurrente independante des rappels repas
+// =============================================================================
+//   - jour : 0 = dimanche, 1 = lundi, ... 6 = samedi (convention Vekio)
+//   - heure : "HH:MM" en 24h
+//
+// On utilise un marker dans content.data pour pouvoir annuler/reprogrammer
+// uniquement cette notification sans toucher aux rappels repas.
+
+const WEIGH_IN_KIND = 'weekly_weigh_in';
+
+async function cancelExistingWeighIn() {
+  const all = await Notifications.getAllScheduledNotificationsAsync();
+  for (const n of all) {
+    if ((n.content.data as { kind?: string } | undefined)?.kind === WEIGH_IN_KIND) {
+      await Notifications.cancelScheduledNotificationAsync(n.identifier);
+    }
+  }
+}
+
+export async function scheduleWeeklyWeighIn(jour: number, heureStr: string): Promise<void> {
+  await cancelExistingWeighIn();
+
+  const [hh, mm] = heureStr.split(':').map(Number);
+  if (isNaN(hh) || isNaN(mm)) return;
+
+  // expo-notifications WEEKLY trigger : weekday 1 = dimanche, 2 = lundi, ...
+  // notre convention : 0 = dimanche, 1 = lundi, donc +1.
+  const weekday = jour + 1;
+
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: 'Pesée hebdomadaire',
+      body: 'C\'est l\'heure de te peser ! ⚖️',
+      data: { kind: WEIGH_IN_KIND },
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+      weekday,
+      hour: hh,
+      minute: mm,
+      channelId: Platform.OS === 'android' ? 'rappels' : undefined,
+    },
+  });
+}
+
+export async function cancelWeeklyWeighIn(): Promise<void> {
+  await cancelExistingWeighIn();
 }

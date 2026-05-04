@@ -14,6 +14,7 @@ export type Objectif = 'perte' | 'maintien' | 'prise';
 export type Vitesse = 0.25 | 0.5 | 0.75;
 export type SportType = 'musculation' | 'cardio' | 'collectif' | 'martial' | 'yoga' | 'autre' | 'aucun';
 export type Frequence = 1 | 3 | 5; // 1-2/sem, 3-4/sem, 5+/sem (valeur centrale)
+export type Intention = 'bien_etre' | 'silhouette' | 'tonique';
 
 export interface Sport {
   type: SportType;
@@ -29,6 +30,8 @@ export interface Profile {
   vitesse?: Vitesse;  // ignore si maintien
   sports: Sport[];
   masseGrassePct?: number; // optionnel — si dispo via Health/balance
+  poidsObjectif?: number;  // kg, optionnel — declenche la bascule auto vers maintien
+  intention?: Intention;   // motivation (bien-etre / silhouette / tonique)
 }
 
 export interface MacroObjectifs {
@@ -40,7 +43,13 @@ export interface MacroObjectifs {
   tdee: number;                 // pour debug/affichage
   facteurActivite: number;
   calculesSurMasseMaigre: boolean;
+  objectifEffectif: Objectif;   // objectif reellement applique (peut differ de profile.objectif)
+  objectifAtteint: boolean;     // true si la cible est atteinte (bascule en maintien auto)
 }
+
+// Marge de tolerance autour du poids cible avant de basculer en maintien.
+// 1 kg couvre les fluctuations naturelles (hydratation, digestion, glycogene).
+export const MARGE_OBJECTIF_KG = 1;
 
 // -----------------------------------------------------------------------------
 // 1. BMR — Mifflin-St Jeor
@@ -140,16 +149,51 @@ function calcLipides(calories: number, p: Profile): number {
 }
 
 // -----------------------------------------------------------------------------
-// 6. Calcul global
+// 6. Bascule automatique selon poids cible
+//    - Sans poids cible : on respecte l'objectif declare tel quel.
+//    - Perte : on retire des calories tant que poids_actuel > cible + marge.
+//      Une fois en zone, bascule maintien automatique.
+//    - Prise : symetrique (tant que poids_actuel < cible - marge).
+//    - Maintien : reste maintien quoi qu'il arrive.
+// -----------------------------------------------------------------------------
+export function getEffectiveObjectif(p: Profile): Objectif {
+  if (p.objectif === 'maintien') return 'maintien';
+  if (p.poidsObjectif === undefined || p.poidsObjectif === null) return p.objectif;
+
+  const ecart = p.poids - p.poidsObjectif;
+
+  if (p.objectif === 'perte') {
+    // Encore au-dessus de la cible (au-dela de la marge) -> on continue la perte.
+    return ecart > MARGE_OBJECTIF_KG ? 'perte' : 'maintien';
+  }
+  // Prise : encore sous la cible (au-dela de la marge) -> on continue la prise.
+  return ecart < -MARGE_OBJECTIF_KG ? 'prise' : 'maintien';
+}
+
+export function isObjectifAtteint(p: Profile): boolean {
+  if (p.objectif === 'maintien') return false;
+  if (p.poidsObjectif === undefined || p.poidsObjectif === null) return false;
+  return getEffectiveObjectif(p) === 'maintien';
+}
+
+// -----------------------------------------------------------------------------
+// 7. Calcul global
 // -----------------------------------------------------------------------------
 export function calculateNeeds(p: Profile): MacroObjectifs {
-  const bmr = calcBMR(p);
-  const facteurActivite = calcFacteurActivite(p.sports);
-  const tdee = bmr * facteurActivite;
-  const calories = Math.round(tdee + calcAjustementCalorique(p.objectif, p.vitesse));
+  // On calcule sur la base de l'objectif effectif : si la cible est atteinte,
+  // toutes les formules en aval (ajustement, proteines, lipides) basculent
+  // automatiquement en mode maintien.
+  const objectifEffectif = getEffectiveObjectif(p);
+  const objectifAtteint = isObjectifAtteint(p);
+  const pEff: Profile = { ...p, objectif: objectifEffectif };
 
-  const proteines_g = calcProteines(p);
-  const lipides_g = calcLipides(calories, p);
+  const bmr = calcBMR(pEff);
+  const facteurActivite = calcFacteurActivite(pEff.sports);
+  const tdee = bmr * facteurActivite;
+  const calories = Math.round(tdee + calcAjustementCalorique(pEff.objectif, pEff.vitesse));
+
+  const proteines_g = calcProteines(pEff);
+  const lipides_g = calcLipides(calories, pEff);
 
   // Glucides = reste des calories
   const caloriesProteines = proteines_g * 4;
@@ -165,8 +209,39 @@ export function calculateNeeds(p: Profile): MacroObjectifs {
     bmr: Math.round(bmr),
     tdee: Math.round(tdee),
     facteurActivite: Math.round(facteurActivite * 100) / 100,
-    calculesSurMasseMaigre: p.masseGrassePct !== undefined && p.masseGrassePct > 0 && p.masseGrassePct < 60,
+    calculesSurMasseMaigre: pEff.masseGrassePct !== undefined && pEff.masseGrassePct > 0 && pEff.masseGrassePct < 60,
+    objectifEffectif,
+    objectifAtteint,
   };
+}
+
+// -----------------------------------------------------------------------------
+// 8. Helper : detecter une incoherence intention <-> sports
+//    L'intention "tonique" (construire du muscle) sans aucune musculation
+//    declaree dans les sports est un signal qu'on devrait alerter l'utilisateur.
+// -----------------------------------------------------------------------------
+export function detecteIncoherenceIntention(intention: Intention | undefined, sports: Sport[]): boolean {
+  if (intention !== 'tonique') return false;
+  return !sports.some((s) => s.type === 'musculation');
+}
+
+// -----------------------------------------------------------------------------
+// 9. Helper : suggestion de poids cible selon l'intention et le poids actuel
+//    Sert a pre-remplir intelligemment le ScrollPicker dans l'onboarding.
+// -----------------------------------------------------------------------------
+export function suggererPoidsCible(poidsActuel: number, objectif: Objectif, intention?: Intention): number {
+  if (objectif === 'maintien') return poidsActuel;
+
+  if (objectif === 'perte') {
+    // Silhouette/affiner : ~10% de perte. Bien-etre : 5%. Tonique : 5% (la
+    // recomposition compte plus que la perte pure).
+    const pct = intention === 'silhouette' ? 0.10 : 0.05;
+    return Math.round((poidsActuel * (1 - pct)) * 10) / 10;
+  }
+
+  // Prise : tonique vise davantage de masse, bien-etre/silhouette restent modestes.
+  const pct = intention === 'tonique' ? 0.07 : 0.04;
+  return Math.round((poidsActuel * (1 + pct)) * 10) / 10;
 }
 
 // -----------------------------------------------------------------------------
