@@ -1,16 +1,15 @@
-import { useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
+import { useEffect, useState } from 'react';
+import { View, StyleSheet, ScrollView, Pressable, Keyboard } from 'react-native';
+import { Text, Portal, Modal, TextInput, Button, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Circle } from 'react-native-svg';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useJournalStore } from '../../stores/journalStore';
 import { useUserStore } from '../../stores/userStore';
 import { useHydratationStore } from '../../stores/hydratationStore';
 import { colors, spacing, radius, shadow, palette } from '../../theme/tokens';
 import { haptic } from '../../lib/haptics';
+import DualGauge from '../../components/DualGauge';
 
-const GLASS_ML = 250;
+const PRESETS_ML = [150, 250, 500] as const;
 
 function getProgressColor(ratio: number): string {
   if (ratio < 0.9) return colors.success;
@@ -25,6 +24,9 @@ export default function DashboardScreen() {
   const macros = useUserStore((s) => s.macros);
   const { totalMl, objectifMl, loadToday, addWater, removeWater } = useHydratationStore();
 
+  const [showCustom, setShowCustom] = useState(false);
+  const [customValue, setCustomValue] = useState('');
+
   useEffect(() => {
     loadFromSupabase();
     loadToday();
@@ -37,40 +39,100 @@ export default function DashboardScreen() {
 
   const calTarget = macros?.calories ?? 2000;
   const calRatio = totalCal / calTarget;
-  const remaining = Math.max(calTarget - Math.round(totalCal), 0);
-
-  const totalGlasses = Math.ceil(objectifMl / GLASS_ML);
-  const filledGlasses = Math.floor(totalMl / GLASS_ML);
   const hydroPct = Math.min(100, Math.round((totalMl / objectifMl) * 100));
 
-  const handleAddWater = () => { haptic.light(); addWater(GLASS_ML); };
-  const handleRemoveWater = () => { haptic.light(); removeWater(GLASS_ML); };
+  const handleAddPreset = (ml: number) => {
+    haptic.light();
+    addWater(ml);
+  };
+
+  const handleAddCustom = () => {
+    haptic.light();
+    setCustomValue('');
+    setShowCustom(true);
+  };
+
+  const validateCustom = () => {
+    const ml = Number(customValue.replace(',', '.'));
+    if (isNaN(ml) || ml <= 0 || ml > 5000) return;
+    Keyboard.dismiss();
+    haptic.success();
+    addWater(Math.round(ml));
+    setShowCustom(false);
+  };
+
+  const handleRemoveLast = () => {
+    if (totalMl > 0) {
+      haptic.light();
+      // Retire le dernier preset le plus probable : 250ml par defaut
+      removeWater(Math.min(250, totalMl));
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <Animated.View entering={FadeInDown.duration(400)}>
+        <View>
           <Text variant="headlineLarge" style={styles.greeting}>
             {profile?.nom ? `Salut ${profile.nom}` : 'Vekio'}
           </Text>
           <Text variant="bodyMedium" style={styles.date}>
             {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
           </Text>
-        </Animated.View>
+        </View>
 
-        {/* Anneau calories */}
-        <Animated.View entering={FadeInDown.duration(450).delay(80)} style={styles.gaugeContainer}>
-          <CalorieGauge
-            current={Math.round(totalCal)}
-            target={calTarget}
-            remaining={remaining}
-            color={getProgressColor(calRatio)}
+        {/* Double anneau calories + hydratation */}
+        <View style={styles.gaugeContainer}>
+          <DualGauge
+            caloriesCurrent={Math.round(totalCal)}
+            caloriesTarget={calTarget}
+            caloriesColor={getProgressColor(calRatio)}
+            waterCurrent={totalMl}
+            waterTarget={objectifMl}
           />
-        </Animated.View>
+        </View>
+
+        {/* Ligne hydratation chiffree */}
+        <View style={styles.hydroLine}>
+          <Text variant="bodyMedium" style={styles.hydroText}>
+            💧 <Text style={{ color: colors.text, fontFamily: 'Inter_600SemiBold' }}>{totalMl}</Text>
+            <Text style={{ color: colors.textMuted }}> / {objectifMl} ml · {hydroPct}%</Text>
+          </Text>
+        </View>
+
+        {/* Boutons presets hydratation */}
+        <View style={styles.presetsRow}>
+          {PRESETS_ML.map((ml) => (
+            <Pressable
+              key={ml}
+              onPress={() => handleAddPreset(ml)}
+              style={[styles.presetBtn, { borderColor: palette.neutral300 }]}
+            >
+              <Text variant="bodyMedium" style={styles.presetTextValue}>+{ml}</Text>
+              <Text variant="bodySmall" style={styles.presetTextUnit}>ml</Text>
+            </Pressable>
+          ))}
+          <Pressable
+            onPress={handleAddCustom}
+            style={[styles.presetBtn, styles.presetBtnAccent]}
+          >
+            <Text variant="bodyMedium" style={[styles.presetTextValue, { color: '#FFF' }]}>+</Text>
+            <Text variant="bodySmall" style={[styles.presetTextUnit, { color: 'rgba(255,255,255,0.85)' }]}>autre</Text>
+          </Pressable>
+        </View>
+
+        {/* Bouton retirer (en cas d'erreur) */}
+        {totalMl > 0 && (
+          <Pressable onPress={handleRemoveLast} style={styles.undoLink} hitSlop={8}>
+            <Text variant="bodySmall" style={{ color: colors.textMuted, textDecorationLine: 'underline' }}>
+              Retirer la dernière entrée
+            </Text>
+          </Pressable>
+        )}
 
         {/* Macros */}
-        <Animated.View entering={FadeInDown.duration(450).delay(160)}>
+        <View style={{ marginTop: spacing['3xl'] }}>
           <Text variant="titleMedium" style={styles.sectionTitle}>Macros du jour</Text>
           <View style={styles.macrosContainer}>
             <MacroBar
@@ -92,105 +154,48 @@ export default function DashboardScreen() {
               color={colors.macroLipide}
             />
           </View>
-        </Animated.View>
-
-        {/* Hydratation */}
-        <Animated.View entering={FadeInDown.duration(450).delay(240)} style={styles.hydratationCard}>
-          <View style={styles.hydratationHeader}>
-            <View>
-              <Text variant="titleMedium" style={styles.hydratationTitle}>Hydratation</Text>
-              <Text variant="bodySmall" style={styles.hydratationSubtitle}>
-                {totalMl} / {objectifMl} ml · {hydroPct}%
-              </Text>
-            </View>
-            <View style={styles.hydratationActions}>
-              <Pressable
-                onPress={handleRemoveWater}
-                style={[styles.hydratationBtn, { backgroundColor: colors.surfaceVariant }]}
-              >
-                <Text variant="titleLarge" style={{ color: colors.text, lineHeight: 24 }}>−</Text>
-              </Pressable>
-              <Pressable
-                onPress={handleAddWater}
-                style={[styles.hydratationBtn, { backgroundColor: palette.primary500 }]}
-              >
-                <Text variant="titleLarge" style={{ color: '#FFF', lineHeight: 24 }}>+</Text>
-              </Pressable>
-            </View>
-          </View>
-
-          <View style={styles.glassesRow}>
-            {Array.from({ length: totalGlasses }, (_, i) => {
-              const isFilled = i < filledGlasses;
-              return (
-                <Pressable
-                  key={i}
-                  onPress={() => {
-                    haptic.light();
-                    if (isFilled && i === filledGlasses - 1) removeWater(GLASS_ML);
-                    else if (!isFilled && i === filledGlasses) addWater(GLASS_ML);
-                  }}
-                  style={[
-                    styles.glass,
-                    {
-                      backgroundColor: isFilled ? colors.water : 'transparent',
-                      borderColor: isFilled ? colors.water : palette.neutral300,
-                    },
-                  ]}
-                />
-              );
-            })}
-          </View>
-        </Animated.View>
+        </View>
       </ScrollView>
+
+      {/* Modal saisie quantite custom */}
+      <Portal>
+        <Modal
+          visible={showCustom}
+          onDismiss={() => setShowCustom(false)}
+          contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
+        >
+          <Text variant="titleLarge" style={styles.modalTitle}>Quantité d'eau</Text>
+          <Text variant="bodySmall" style={styles.modalDesc}>
+            Combien de millilitres veux-tu ajouter ?
+          </Text>
+          <TextInput
+            value={customValue}
+            onChangeText={setCustomValue}
+            mode="outlined"
+            keyboardType="numeric"
+            placeholder="ex : 330"
+            autoFocus
+            right={<TextInput.Affix text="ml" />}
+            returnKeyType="done"
+            onSubmitEditing={validateCustom}
+            style={{ marginBottom: spacing.lg }}
+          />
+          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+            <Button mode="text" onPress={() => setShowCustom(false)} style={{ flex: 1 }}>
+              Annuler
+            </Button>
+            <Button
+              mode="contained"
+              onPress={validateCustom}
+              disabled={!customValue || isNaN(Number(customValue.replace(',', '.')))}
+              style={{ flex: 1 }}
+            >
+              Ajouter
+            </Button>
+          </View>
+        </Modal>
+      </Portal>
     </SafeAreaView>
-  );
-}
-
-function CalorieGauge({ current, target, remaining, color }: { current: number; target: number; remaining: number; color: string }) {
-  const size = 200;
-  const strokeWidth = 16;
-  const r = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * r;
-  const progress = Math.min(current / target, 1);
-  const strokeDashoffset = circumference * (1 - progress);
-
-  return (
-    <View style={{ alignItems: 'center' }}>
-      <Svg width={size} height={size}>
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          stroke={palette.neutral200}
-          strokeWidth={strokeWidth}
-          fill="none"
-        />
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          stroke={color}
-          strokeWidth={strokeWidth}
-          fill="none"
-          strokeDasharray={`${circumference}`}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        />
-      </Svg>
-      <View style={styles.gaugeText}>
-        <Text variant="displaySmall" style={{ color: colors.text, fontFamily: 'Inter_700Bold' }}>
-          {current}
-        </Text>
-        <Text variant="bodySmall" style={{ color: colors.textMuted, marginTop: 2 }}>
-          / {target} kcal
-        </Text>
-        <Text variant="labelMedium" style={{ color, marginTop: spacing.xs }}>
-          {remaining > 0 ? `${remaining} restantes` : 'Objectif atteint'}
-        </Text>
-      </View>
-    </View>
   );
 }
 
@@ -219,34 +224,57 @@ function MacroBar({ label, current, target, color }: {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
   scrollContent: {
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.md,
     paddingBottom: spacing['4xl'],
   },
-  greeting: {
-    color: colors.text,
-    fontFamily: 'Inter_700Bold',
-  },
+  greeting: { color: colors.text, fontFamily: 'Inter_700Bold' },
   date: {
     color: colors.textMuted,
     marginTop: spacing.xs,
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.xl,
     textTransform: 'capitalize',
   },
   gaugeContainer: {
     alignItems: 'center',
-    marginBottom: spacing['3xl'],
+    marginBottom: spacing.lg,
   },
-  gaugeText: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    justifyContent: 'center',
+  hydroLine: {
     alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  hydroText: {
+    color: colors.text,
+  },
+  presetsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  presetBtn: {
+    flex: 1,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+  },
+  presetBtnAccent: {
+    borderColor: colors.water,
+    backgroundColor: colors.water,
+  },
+  presetTextValue: {
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.text,
+  },
+  presetTextUnit: {
+    color: colors.textMuted,
+    marginTop: 1,
+  },
+  undoLink: {
+    alignSelf: 'center',
+    marginTop: spacing.sm,
   },
   sectionTitle: {
     color: colors.text,
@@ -254,7 +282,6 @@ const styles = StyleSheet.create({
   },
   macrosContainer: {
     gap: spacing.lg,
-    marginBottom: spacing['3xl'],
   },
   macroBarContainer: {
     gap: spacing.sm,
@@ -274,39 +301,18 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: radius.sm,
   },
-  hydratationCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    padding: spacing.xl,
-    ...shadow.card,
+  modal: {
+    margin: spacing.xl,
+    padding: spacing['2xl'],
+    borderRadius: radius['2xl'],
   },
-  hydratationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  modalTitle: {
+    color: colors.text,
+    fontFamily: 'Inter_700Bold',
+    marginBottom: spacing.xs,
+  },
+  modalDesc: {
+    color: colors.textMuted,
     marginBottom: spacing.lg,
-  },
-  hydratationTitle: { color: colors.text },
-  hydratationSubtitle: { color: colors.textMuted, marginTop: 2 },
-  hydratationActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  hydratationBtn: {
-    width: 40, height: 40,
-    borderRadius: radius.full,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  glassesRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  glass: {
-    width: 24,
-    height: 32,
-    borderRadius: radius.sm,
-    borderWidth: 2,
   },
 });
