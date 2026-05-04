@@ -3,7 +3,9 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, SegmentedButtons, Card, useTheme, Button, Portal, Modal } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import Svg, { Rect, Line } from 'react-native-svg';
+import { colors, spacing, radius, shadow, palette } from '../../theme/tokens';
 import { supabase } from '../../lib/supabase';
 import { useUserStore } from '../../stores/userStore';
 import { useWeightStore } from '../../stores/weightStore';
@@ -150,13 +152,16 @@ export default function HistoriqueScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
-          Statistiques
-        </Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Animated.View entering={FadeInDown.duration(400)}>
+          <Text variant="headlineLarge" style={[styles.title, { color: theme.colors.onBackground }]}>
+            Statistiques
+          </Text>
+        </Animated.View>
 
         {/* Carte evolution poids */}
-        <Card style={styles.card} mode="outlined">
+        <Animated.View entering={FadeInDown.duration(450).delay(80)}>
+        <Card style={styles.card} mode="contained">
           <Card.Content>
             <Text variant="titleMedium" style={styles.cardTitle}>Mon évolution</Text>
             <View style={styles.evolutionRow}>
@@ -228,10 +233,11 @@ export default function HistoriqueScreen() {
             </Button>
           </Card.Content>
         </Card>
+        </Animated.View>
 
         {/* Composition corporelle si dispo */}
         {lastWithComposition && (
-          <Card style={styles.card} mode="outlined">
+          <Card style={styles.card} mode="contained">
             <Card.Content>
               <Text variant="titleMedium" style={styles.cardTitle}>Composition corporelle</Text>
               <View style={styles.compoRow}>
@@ -278,7 +284,7 @@ export default function HistoriqueScreen() {
         <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
           Calories
         </Text>
-        <Card style={styles.card} mode="outlined">
+        <Card style={styles.card} mode="contained">
           <Card.Content>
             <CalorieChart data={data} target={macros?.calories ?? 2000} onSelectDay={setSelectedDay} />
           </Card.Content>
@@ -288,7 +294,7 @@ export default function HistoriqueScreen() {
         <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
           Macronutriments
         </Text>
-        <Card style={styles.card} mode="outlined">
+        <Card style={styles.card} mode="contained">
           <Card.Content>
             <MacroChart data={data} />
           </Card.Content>
@@ -300,7 +306,7 @@ export default function HistoriqueScreen() {
             <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
               {new Date(selectedDay.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
             </Text>
-            <Card style={styles.card} mode="outlined">
+            <Card style={styles.card} mode="contained">
               <Card.Content>
                 <View style={styles.dayMacros}>
                   <DayStat label="Calories" value={`${Math.round(selectedDay.calories)}`} unit="kcal" color={theme.colors.primary} />
@@ -509,11 +515,16 @@ function DayStat({ label, value, unit, color }: { label: string; value: string; 
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scrollContent: { padding: 20, paddingBottom: 40 },
-  title: { fontWeight: 'bold', marginBottom: 16 },
-  card: { marginBottom: 16, borderRadius: 16 },
-  cardTitle: { fontWeight: '600', marginBottom: 12 },
+  container: { flex: 1, backgroundColor: colors.background },
+  scrollContent: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing['4xl'] },
+  title: { fontFamily: 'Inter_700Bold', color: colors.text, marginBottom: spacing.lg },
+  card: {
+    marginBottom: spacing.lg,
+    borderRadius: radius.xl,
+    backgroundColor: colors.surface,
+    ...shadow.card,
+  },
+  cardTitle: { color: colors.text, marginBottom: spacing.md },
   evolutionRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',

@@ -3,10 +3,12 @@ import { View, StyleSheet, ScrollView, Alert, Keyboard, TouchableWithoutFeedback
 import { Text, Card, Button, TextInput, useTheme } from 'react-native-paper';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useUserStore } from '../../stores/userStore';
 import { useWeightStore } from '../../stores/weightStore';
 import { supabase } from '../../lib/supabase';
 import type { Intention } from '../../lib/nutrition';
+import { colors, spacing, radius, shadow } from '../../theme/tokens';
 
 const OBJECTIFS = [
   { value: 'perte', label: 'Perdre du poids' },
@@ -228,13 +230,16 @@ export default function ProfilScreen() {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
-            Profil
-          </Text>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <Animated.View entering={FadeInDown.duration(400)}>
+            <Text variant="headlineLarge" style={[styles.title, { color: theme.colors.onBackground }]}>
+              Profil
+            </Text>
+          </Animated.View>
 
           {/* Infos profil */}
-          <Card style={styles.card} mode="outlined">
+          <Animated.View entering={FadeInDown.duration(450).delay(80)}>
+          <Card style={styles.card} mode="contained">
             <Card.Content>
               <View style={styles.cardHeader}>
                 <Text variant="titleMedium" style={styles.cardTitle}>Mes informations</Text>
@@ -291,10 +296,12 @@ export default function ProfilScreen() {
               )}
             </Card.Content>
           </Card>
+          </Animated.View>
 
           {/* Mon objectif (cible + intention) — masque si maintien sans intention */}
           {(profile?.objectif === 'perte' || profile?.objectif === 'prise' || profile?.intention) && (
-            <Card style={styles.card} mode="outlined">
+            <Animated.View entering={FadeInDown.duration(450).delay(160)}>
+            <Card style={styles.card} mode="contained">
               <Card.Content>
                 <View style={styles.cardHeader}>
                   <Text variant="titleMedium" style={styles.cardTitle}>Mon objectif</Text>
@@ -395,10 +402,12 @@ export default function ProfilScreen() {
                 )}
               </Card.Content>
             </Card>
+            </Animated.View>
           )}
 
           {/* Objectifs macros */}
-          <Card style={styles.card} mode="outlined">
+          <Animated.View entering={FadeInDown.duration(450).delay(240)}>
+          <Card style={styles.card} mode="contained">
             <Card.Content>
               <View style={styles.cardHeader}>
                 <Text variant="titleMedium" style={styles.cardTitle}>Objectifs journaliers</Text>
@@ -435,9 +444,11 @@ export default function ProfilScreen() {
               )}
             </Card.Content>
           </Card>
+          </Animated.View>
 
           {/* Compte */}
-          <Card style={styles.card} mode="outlined">
+          <Animated.View entering={FadeInDown.duration(450).delay(320)}>
+          <Card style={styles.card} mode="contained">
             <Card.Content>
               <Text variant="titleMedium" style={styles.cardTitle}>Compte</Text>
               <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 12 }}>
@@ -451,6 +462,7 @@ export default function ProfilScreen() {
               </Button>
             </Card.Content>
           </Card>
+          </Animated.View>
 
         </ScrollView>
       </SafeAreaView>
@@ -470,26 +482,32 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 80,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing['5xl'],
   },
   title: {
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontFamily: 'Inter_700Bold',
+    color: colors.text,
+    marginBottom: spacing.xl,
   },
   card: {
-    marginBottom: 16,
+    marginBottom: spacing.lg,
+    borderRadius: radius.xl,
+    backgroundColor: colors.surface,
+    ...shadow.card,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   cardTitle: {
-    fontWeight: '600',
+    color: colors.text,
   },
   infoRow: {
     flexDirection: 'row',
