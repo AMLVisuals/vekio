@@ -1,13 +1,25 @@
+import { View } from 'react-native';
 import { Stack } from 'expo-router';
-import { PaperProvider, MD3DarkTheme, MD3LightTheme } from 'react-native-paper';
-import { useColorScheme } from 'react-native';
+import { PaperProvider } from 'react-native-paper';
+import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
+import { vekioTheme } from '../theme';
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const theme = colorScheme === 'dark' ? MD3DarkTheme : MD3LightTheme;
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+  });
+
+  // Tant que les fonts ne sont pas pretes on rend un fond pour eviter le
+  // flash de texte avec la police systeme.
+  if (!fontsLoaded) {
+    return <View style={{ flex: 1, backgroundColor: vekioTheme.colors.background }} />;
+  }
 
   return (
-    <PaperProvider theme={theme}>
+    <PaperProvider theme={vekioTheme}>
       <Stack
         screenOptions={{
           headerShown: false,
