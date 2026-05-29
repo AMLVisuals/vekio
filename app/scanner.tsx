@@ -23,6 +23,7 @@ export default function ScannerScreen() {
     const product = await getProductByBarcode(data);
 
     if (product) {
+      const optStr = (v: number | undefined): string | undefined => v !== undefined ? String(v) : undefined;
       router.replace({
         pathname: '/add-food',
         params: {
@@ -34,6 +35,14 @@ export default function ScannerScreen() {
           proteines: String(product.proteines),
           glucides: String(product.glucides),
           lipides: String(product.lipides),
+          fibres: optStr(product.fibres),
+          sucres: optStr(product.sucres),
+          ags: optStr(product.ags),
+          cholesterol: optStr(product.cholesterol),
+          sodium: optStr(product.sodium),
+          calcium: optStr(product.calcium),
+          fer: optStr(product.fer),
+          potassium: optStr(product.potassium),
         },
       });
     } else {

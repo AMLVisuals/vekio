@@ -25,6 +25,10 @@ interface UserProfile {
   heure_notification_pesee: string;
   intro_seen: Record<string, boolean>;
   isPro: boolean;
+  // Cycle menstruel (uniquement si sexe = femme)
+  cycle_actif: boolean;
+  cycle_dernieres_regles: string | null; // ISO date YYYY-MM-DD
+  cycle_duree_jours: number;
 }
 
 interface SaveProfileInput {
@@ -42,6 +46,9 @@ interface SaveProfileInput {
   masse_hydrique_pct?: number;
   poids_objectif?: number | null;
   intention?: Intention | null;
+  cycle_actif?: boolean;
+  cycle_dernieres_regles?: string | null;
+  cycle_duree_jours?: number;
 }
 
 // Resultat du recalcul apres une pesee : indique si on vient juste de basculer
@@ -51,9 +58,14 @@ export interface RecalcResult {
   macros: MacroObjectifs;
 }
 
+export type MacrosMode = 'auto' | 'manuel';
+
 interface UserState {
   profile: UserProfile | null;
   macros: MacroObjectifs | null;
+  // 'auto' : recalcul automatique a chaque pesee selon le profil.
+  // 'manuel' : valeurs figees, la pesee met juste a jour le poids.
+  macrosMode: MacrosMode;
   isAuthenticated: boolean;
   isLoading: boolean;
   hasCompletedOnboarding: boolean;
@@ -70,12 +82,18 @@ interface UserState {
   setPeseeSchedule: (jour: number, heure: string) => Promise<void>;
   // Recalcule les macros apres une nouvelle pesee, met a jour profiles.poids,
   // detecte la premiere bascule "objectif atteint" et persist tout en DB.
+  // Si macrosMode='manuel', seul le poids est mis a jour, les macros restent.
   recalculateAfterWeight: (nouveauPoids: number) => Promise<RecalcResult>;
+  // Sauvegarde des macros saisies a la main + bascule en mode 'manuel'.
+  saveMacrosManual: (m: { calories: number; proteines_g: number; glucides_g: number; lipides_g: number }) => Promise<void>;
+  // Recalcule les macros depuis le profil + bascule en mode 'auto'.
+  resetMacrosToAuto: () => Promise<MacroObjectifs>;
 }
 
 export const useUserStore = create<UserState>((set, get) => ({
   profile: null,
   macros: null,
+  macrosMode: 'auto',
   isAuthenticated: false,
   isLoading: true,
   hasCompletedOnboarding: false,
@@ -150,6 +168,9 @@ export const useUserStore = create<UserState>((set, get) => ({
         heure_notification_pesee: (profileData.heure_notification_pesee as string)?.slice(0, 5) ?? '09:00',
         intro_seen: (profileData.intro_seen as Record<string, boolean>) ?? {},
         isPro: profileData.is_pro ?? false,
+        cycle_actif: profileData.cycle_actif ?? false,
+        cycle_dernieres_regles: profileData.cycle_dernieres_regles ?? null,
+        cycle_duree_jours: profileData.cycle_duree_jours ?? 28,
       },
       macros: macrosData
         ? {
@@ -157,14 +178,28 @@ export const useUserStore = create<UserState>((set, get) => ({
             proteines_g: Number(macrosData.proteines_g),
             glucides_g: Number(macrosData.glucides_g),
             lipides_g: Number(macrosData.lipides_g),
+            // Si non persistes (anciens users), 0 — seront recalcules au prochain
+            // saveProfile/resetMacrosToAuto/recalculateAfterWeight.
+            fibres_g: Number(macrosData.fibres_g ?? 0),
+            sucres_g: Number(macrosData.sucres_g ?? 0),
+            ags_g: Number(macrosData.ags_g ?? 0),
+            cholesterol_mg: Number(macrosData.cholesterol_mg ?? 0),
+            sodium_mg: Number(macrosData.sodium_mg ?? 0),
+            calcium_mg: Number(macrosData.calcium_mg ?? 0),
+            fer_mg: Number(macrosData.fer_mg ?? 0),
+            potassium_mg: Number(macrosData.potassium_mg ?? 0),
             bmr: 0,
             tdee: 0,
             facteurActivite: 0,
             calculesSurMasseMaigre: macrosData.calculees_sur_masse_maigre ?? false,
             objectifEffectif: profileData.objectif,
             objectifAtteint: profileData.objectif_atteint_le !== null,
+            phaseCycle: null,
+            jourCycle: null,
+            bonusCalorieLuteale: 0,
           }
         : null,
+      macrosMode: (macrosData?.macros_mode as MacrosMode) ?? 'auto',
     });
 
     return true;
@@ -191,6 +226,9 @@ export const useUserStore = create<UserState>((set, get) => ({
       masseGrassePct: data.masse_grasse_pct,
       poidsObjectif: data.poids_objectif ?? undefined,
       intention: data.intention ?? undefined,
+      cycleActif: data.cycle_actif ?? false,
+      cycleDernieresRegles: data.cycle_dernieres_regles ? new Date(data.cycle_dernieres_regles) : undefined,
+      cycleDureeJours: data.cycle_duree_jours ?? 28,
     };
     const macros = calculateNeeds(profileForCalc);
 
@@ -219,11 +257,16 @@ export const useUserStore = create<UserState>((set, get) => ({
         poids_objectif: data.poids_objectif ?? null,
         intention: data.intention ?? null,
         objectif_atteint_le: objectifAtteintLe,
+        cycle_actif: data.cycle_actif ?? false,
+        cycle_dernieres_regles: data.cycle_dernieres_regles ?? null,
+        cycle_duree_jours: data.cycle_duree_jours ?? 28,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
 
     if (profileError) throw profileError;
 
+    // L'edition du profil repasse en mode auto : si l'utilisateur change son
+    // poids/sport/objectif il s'attend a ce que les macros se recalibrent.
     const { error: macrosError } = await supabase
       .from('objectifs_macros')
       .upsert({
@@ -232,7 +275,16 @@ export const useUserStore = create<UserState>((set, get) => ({
         proteines_g: macros.proteines_g,
         glucides_g: macros.glucides_g,
         lipides_g: macros.lipides_g,
+        fibres_g: macros.fibres_g,
+        sucres_g: macros.sucres_g,
+        ags_g: macros.ags_g,
+        cholesterol_mg: macros.cholesterol_mg,
+        sodium_mg: macros.sodium_mg,
+        calcium_mg: macros.calcium_mg,
+        fer_mg: macros.fer_mg,
+        potassium_mg: macros.potassium_mg,
         calculees_sur_masse_maigre: macros.calculesSurMasseMaigre,
+        macros_mode: 'auto',
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
 
@@ -261,8 +313,12 @@ export const useUserStore = create<UserState>((set, get) => ({
         jour_pesee_hebdo: 1,
         heure_notification_pesee: '09:00',
         intro_seen: {},
+        cycle_actif: data.cycle_actif ?? false,
+        cycle_dernieres_regles: data.cycle_dernieres_regles ?? null,
+        cycle_duree_jours: data.cycle_duree_jours ?? 28,
       },
       macros,
+      macrosMode: 'auto',
       hasCompletedOnboarding: true,
     });
   },
@@ -320,6 +376,8 @@ export const useUserStore = create<UserState>((set, get) => ({
   recalculateAfterWeight: async (nouveauPoids: number): Promise<RecalcResult> => {
     const { data: { user } } = await supabase.auth.getUser();
     const profile = get().profile;
+    const mode = get().macrosMode;
+    const currentMacros = get().macros;
     if (!user || !profile) {
       throw new Error('Profil non charge');
     }
@@ -339,12 +397,19 @@ export const useUserStore = create<UserState>((set, get) => ({
       masseGrassePct: profile.masse_grasse_pct,
       poidsObjectif: profile.poids_objectif ?? undefined,
       intention: profile.intention ?? undefined,
+      cycleActif: profile.cycle_actif,
+      cycleDernieresRegles: profile.cycle_dernieres_regles ? new Date(profile.cycle_dernieres_regles) : undefined,
+      cycleDureeJours: profile.cycle_duree_jours,
     };
-    const macros = calculateNeeds(profileForCalc);
+    // En mode 'manuel' on respecte les macros saisies par l'utilisateur :
+    // la pesee met juste a jour le poids et le flag celebration.
+    const macros = mode === 'manuel' && currentMacros ? currentMacros : calculateNeeds(profileForCalc);
 
-    // Premiere bascule en zone objectif atteint (objectif_atteint_le encore null)
+    // Premiere bascule en zone objectif atteint (objectif_atteint_le encore null).
+    // On calcule la bascule meme en mode manuel : c'est un evenement profil, pas macros.
+    const macrosForCelebration = calculateNeeds(profileForCalc);
     const wasAlreadyAtteint = profile.objectif_atteint_le !== null;
-    const celebrate = macros.objectifAtteint && !wasAlreadyAtteint;
+    const celebrate = macrosForCelebration.objectifAtteint && !wasAlreadyAtteint;
     const objectifAtteintLe = celebrate
       ? new Date().toISOString().split('T')[0]
       : profile.objectif_atteint_le;
@@ -360,19 +425,30 @@ export const useUserStore = create<UserState>((set, get) => ({
       .eq('user_id', user.id);
     if (profileError) throw profileError;
 
-    // Persist macros recalcules
-    const { error: macrosError } = await supabase
-      .from('objectifs_macros')
-      .upsert({
-        user_id: user.id,
-        calories: macros.calories,
-        proteines_g: macros.proteines_g,
-        glucides_g: macros.glucides_g,
-        lipides_g: macros.lipides_g,
-        calculees_sur_masse_maigre: macros.calculesSurMasseMaigre,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' });
-    if (macrosError) throw macrosError;
+    // Persist macros uniquement en mode auto (sinon on ne touche pas a la ligne)
+    if (mode === 'auto') {
+      const { error: macrosError } = await supabase
+        .from('objectifs_macros')
+        .upsert({
+          user_id: user.id,
+          calories: macros.calories,
+          proteines_g: macros.proteines_g,
+          glucides_g: macros.glucides_g,
+          lipides_g: macros.lipides_g,
+          fibres_g: macros.fibres_g,
+          sucres_g: macros.sucres_g,
+          ags_g: macros.ags_g,
+          cholesterol_mg: macros.cholesterol_mg,
+          sodium_mg: macros.sodium_mg,
+          calcium_mg: macros.calcium_mg,
+          fer_mg: macros.fer_mg,
+          potassium_mg: macros.potassium_mg,
+          calculees_sur_masse_maigre: macros.calculesSurMasseMaigre,
+          macros_mode: 'auto',
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' });
+      if (macrosError) throw macrosError;
+    }
 
     set((s) => ({
       profile: s.profile
@@ -382,5 +458,94 @@ export const useUserStore = create<UserState>((set, get) => ({
     }));
 
     return { celebrate, macros };
+  },
+
+  // -------------------------------------------------------------------------
+  // Sauvegarde manuelle des macros : passe en mode 'manuel'
+  // -------------------------------------------------------------------------
+  saveMacrosManual: async (m) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Non connecté');
+    const { error } = await supabase
+      .from('objectifs_macros')
+      .upsert({
+        user_id: user.id,
+        calories: m.calories,
+        proteines_g: m.proteines_g,
+        glucides_g: m.glucides_g,
+        lipides_g: m.lipides_g,
+        macros_mode: 'manuel',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+    if (error) throw error;
+    set((s) => ({
+      macros: s.macros ? { ...s.macros, ...m } : {
+        ...m,
+        fibres_g: 0, sucres_g: 0, ags_g: 0,
+        cholesterol_mg: 0, sodium_mg: 0, calcium_mg: 0,
+        fer_mg: 0, potassium_mg: 0,
+        bmr: 0, tdee: 0, facteurActivite: 0,
+        calculesSurMasseMaigre: false,
+        objectifEffectif: 'maintien',
+        objectifAtteint: false,
+        phaseCycle: null,
+        jourCycle: null,
+        bonusCalorieLuteale: 0,
+      },
+      macrosMode: 'manuel',
+    }));
+  },
+
+  // -------------------------------------------------------------------------
+  // Reset des macros au calcul automatique a partir du profil courant
+  // -------------------------------------------------------------------------
+  resetMacrosToAuto: async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    const profile = get().profile;
+    if (!user || !profile) throw new Error('Profil non charge');
+
+    const vitesse: Vitesse | undefined =
+      profile.vitesse_kg_semaine === 0.25 || profile.vitesse_kg_semaine === 0.5 || profile.vitesse_kg_semaine === 0.75
+        ? profile.vitesse_kg_semaine : undefined;
+    const profileForCalc: Profile = {
+      sexe: profile.sexe,
+      age: profile.age,
+      poids: profile.poids,
+      taille: profile.taille,
+      objectif: profile.objectif,
+      vitesse,
+      sports: profile.sports,
+      masseGrassePct: profile.masse_grasse_pct,
+      poidsObjectif: profile.poids_objectif ?? undefined,
+      intention: profile.intention ?? undefined,
+      cycleActif: profile.cycle_actif,
+      cycleDernieresRegles: profile.cycle_dernieres_regles ? new Date(profile.cycle_dernieres_regles) : undefined,
+      cycleDureeJours: profile.cycle_duree_jours,
+    };
+    const macros = calculateNeeds(profileForCalc);
+
+    const { error } = await supabase
+      .from('objectifs_macros')
+      .upsert({
+        user_id: user.id,
+        calories: macros.calories,
+        proteines_g: macros.proteines_g,
+        glucides_g: macros.glucides_g,
+        lipides_g: macros.lipides_g,
+        fibres_g: macros.fibres_g,
+        sucres_g: macros.sucres_g,
+        ags_g: macros.ags_g,
+        cholesterol_mg: macros.cholesterol_mg,
+        sodium_mg: macros.sodium_mg,
+        calcium_mg: macros.calcium_mg,
+        fer_mg: macros.fer_mg,
+        potassium_mg: macros.potassium_mg,
+        calculees_sur_masse_maigre: macros.calculesSurMasseMaigre,
+        macros_mode: 'auto',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+    if (error) throw error;
+    set({ macros, macrosMode: 'auto' });
+    return macros;
   },
 }));

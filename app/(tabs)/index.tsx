@@ -6,6 +6,7 @@ import { useJournalStore } from '../../stores/journalStore';
 import { useUserStore } from '../../stores/userStore';
 import { useHydratationStore } from '../../stores/hydratationStore';
 import { colors, spacing, radius, palette } from '../../theme/tokens';
+import { describePhase } from '../../lib/nutrition';
 import { haptic } from '../../lib/haptics';
 import { useIntroPopup } from '../../lib/useIntroPopup';
 import DualGauge from '../../components/DualGauge';
@@ -40,6 +41,17 @@ export default function DashboardScreen() {
   const totalProt = entries.reduce((sum, e) => sum + e.proteines, 0);
   const totalGluc = entries.reduce((sum, e) => sum + e.glucides, 0);
   const totalLip = entries.reduce((sum, e) => sum + e.lipides, 0);
+  // Totaux micros
+  const totalFibres = entries.reduce((s, e) => s + (e.fibres ?? 0), 0);
+  const totalSucres = entries.reduce((s, e) => s + (e.sucres ?? 0), 0);
+  const totalAgs = entries.reduce((s, e) => s + (e.ags ?? 0), 0);
+  const totalCholesterol = entries.reduce((s, e) => s + (e.cholesterol ?? 0), 0);
+  const totalSodium = entries.reduce((s, e) => s + (e.sodium ?? 0), 0);
+  const totalCalcium = entries.reduce((s, e) => s + (e.calcium ?? 0), 0);
+  const totalFer = entries.reduce((s, e) => s + (e.fer ?? 0), 0);
+  const totalPotassium = entries.reduce((s, e) => s + (e.potassium ?? 0), 0);
+
+  const [showDetails, setShowDetails] = useState(false);
 
   const calTarget = macros?.calories ?? 2000;
   const calRatio = totalCal / calTarget;
@@ -94,6 +106,20 @@ export default function DashboardScreen() {
             style={{ margin: 0 }}
           />
         </View>
+
+        {/* Widget cycle menstruel - affiche uniquement si actif */}
+        {macros?.phaseCycle && (
+          <View style={styles.cycleBadge}>
+            <Text variant="bodyMedium" style={{ color: palette.primary700, fontWeight: '600' }}>
+              {describePhase(macros.phaseCycle)} · J{macros.jourCycle}
+            </Text>
+            {macros.bonusCalorieLuteale > 0 && (
+              <Text variant="bodySmall" style={{ color: palette.primary600, marginTop: 2 }}>
+                +{macros.bonusCalorieLuteale} kcal aujourd'hui pour suivre ton métabolisme
+              </Text>
+            )}
+          </View>
+        )}
 
         {/* Double anneau calories + hydratation */}
         <View style={styles.gaugeContainer}>
@@ -167,6 +193,32 @@ export default function DashboardScreen() {
               color={colors.macroLipide}
             />
           </View>
+        </View>
+
+        {/* Details nutritionnels - section repliable */}
+        <View style={{ marginTop: spacing['3xl'] }}>
+          <Pressable
+            onPress={() => { haptic.light(); setShowDetails(!showDetails); }}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing.sm }}
+          >
+            <Text variant="titleMedium" style={styles.sectionTitle}>Détails nutritionnels</Text>
+            <Text variant="titleMedium" style={{ color: colors.textMuted }}>{showDetails ? '▲' : '▼'}</Text>
+          </Pressable>
+          {showDetails && (
+            <View style={{ marginTop: spacing.sm, gap: spacing.md }}>
+              <MicroRow label="Fibres"      current={Math.round(totalFibres * 10) / 10}      target={macros?.fibres_g ?? 0}      unit="g"  kind="target" />
+              <MicroRow label="Sucres"      current={Math.round(totalSucres * 10) / 10}      target={macros?.sucres_g ?? 0}      unit="g"  kind="limit" />
+              <MicroRow label="AG saturés"  current={Math.round(totalAgs * 10) / 10}         target={macros?.ags_g ?? 0}         unit="g"  kind="limit" />
+              <MicroRow label="Cholestérol" current={Math.round(totalCholesterol)}           target={macros?.cholesterol_mg ?? 0} unit="mg" kind="limit" />
+              <MicroRow label="Sodium"      current={Math.round(totalSodium)}                target={macros?.sodium_mg ?? 0}     unit="mg" kind="limit" />
+              <MicroRow label="Calcium"     current={Math.round(totalCalcium)}               target={macros?.calcium_mg ?? 0}    unit="mg" kind="target" />
+              <MicroRow label="Fer"         current={Math.round(totalFer * 10) / 10}         target={macros?.fer_mg ?? 0}        unit="mg" kind="target" />
+              <MicroRow label="Potassium"   current={Math.round(totalPotassium)}             target={macros?.potassium_mg ?? 0}  unit="mg" kind="target" />
+              <Text variant="bodySmall" style={{ color: colors.textMuted, fontStyle: 'italic', marginTop: spacing.sm }}>
+                Sources : ANSES 2016, OMS 2012/2015. Le cholestérol est affiché à titre indicatif.
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -252,6 +304,37 @@ function MacroBar({ label, current, target, color }: {
   );
 }
 
+// MicroRow : barre similaire mais bicolore selon le type de cible
+//   target : cible a atteindre (fibres, calcium, fer, potassium) - vert si OK
+//   limit  : limite a ne pas depasser (sucres, AGS, cholesterol, sodium) - rouge si depasse
+function MicroRow({ label, current, target, unit, kind }: {
+  label: string; current: number; target: number; unit: 'g' | 'mg'; kind: 'target' | 'limit';
+}) {
+  const ratio = target > 0 ? current / target : 0;
+  const progressWidth = `${Math.min(ratio * 100, 100)}%`;
+  let color = colors.textMuted;
+  if (kind === 'target') {
+    color = ratio >= 0.8 ? colors.success : palette.primary500;
+  } else {
+    if (ratio < 0.8) color = colors.success;
+    else if (ratio < 1) color = colors.warning;
+    else color = colors.error;
+  }
+  return (
+    <View style={styles.macroBarContainer}>
+      <View style={styles.macroBarHeader}>
+        <Text variant="bodyMedium" style={{ color: colors.text }}>{label}</Text>
+        <Text variant="labelLarge" style={{ color: colors.text }}>
+          {current}<Text style={{ color: colors.textMuted }}> {kind === 'limit' ? '/ < ' : '/ '}{target} {unit}</Text>
+        </Text>
+      </View>
+      <View style={styles.macroBarBg}>
+        <View style={[styles.macroBarFill, { width: progressWidth as any, backgroundColor: color }]} />
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scrollContent: {
@@ -273,6 +356,14 @@ const styles = StyleSheet.create({
   gaugeContainer: {
     alignItems: 'center',
     marginBottom: spacing.lg,
+  },
+  cycleBadge: {
+    backgroundColor: palette.primary50 ?? '#f0fdf4',
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+    alignItems: 'center',
   },
   hydroLine: {
     alignItems: 'center',

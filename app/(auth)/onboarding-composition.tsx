@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Text, TextInput, Button, Card, IconButton, useTheme } from 'react-native-paper';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -44,7 +44,16 @@ export default function OnboardingCompositionScreen() {
       <View style={styles.topBar}>
         <IconButton icon="arrow-left" size={24} onPress={() => router.back()} />
       </View>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.kav}
+      >
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         <Text variant="titleMedium" style={styles.step}>Étape 3/5</Text>
         <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
           Tu connais ta composition ?
@@ -119,12 +128,14 @@ export default function OnboardingCompositionScreen() {
           Continuer
         </Button>
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  kav: { flex: 1 },
   topBar: { paddingHorizontal: 8, paddingTop: 4 },
   content: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 24 },
   step: { opacity: 0.5, marginBottom: 8 },

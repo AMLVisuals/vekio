@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { Text, IconButton } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -74,6 +74,7 @@ export default function JournalScreen() {
 function MealSection({ meal, entries }: { meal: MealType; entries: JournalEntry[] }) {
   const removeEntry = useJournalStore((s) => s.removeEntry);
   const mealCalories = entries.reduce((sum, e) => sum + e.calories, 0);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const handleAdd = () => {
     haptic.light();
@@ -83,6 +84,11 @@ function MealSection({ meal, entries }: { meal: MealType; entries: JournalEntry[
   const handleRemove = (id: string) => {
     haptic.light();
     removeEntry(id);
+  };
+
+  const toggleExpand = (id: string) => {
+    haptic.light();
+    setExpandedId(expandedId === id ? null : id);
   };
 
   return (
@@ -101,29 +107,47 @@ function MealSection({ meal, entries }: { meal: MealType; entries: JournalEntry[
         </Pressable>
       </View>
 
-      {entries.map((entry) => (
-        <View key={entry.id} style={styles.entryRow}>
-          <View style={{ flex: 1 }}>
-            <Text variant="bodyMedium" style={{ color: colors.text }} numberOfLines={1}>
-              {entry.nom}
-            </Text>
-            <Text variant="bodySmall" style={{ color: colors.textMuted, marginTop: 2 }}>
-              {entry.quantite_g} g · {Math.round(entry.calories)} kcal
-            </Text>
-            <View style={styles.entryMacros}>
-              <Text variant="bodySmall" style={{ color: colors.macroProteine }}>P {entry.proteines}g</Text>
-              <Text variant="bodySmall" style={{ color: colors.macroGlucide }}>G {entry.glucides}g</Text>
-              <Text variant="bodySmall" style={{ color: colors.macroLipide }}>L {entry.lipides}g</Text>
-            </View>
+      {entries.map((entry) => {
+        const expanded = expandedId === entry.id;
+        return (
+          <View key={entry.id}>
+            <Pressable onPress={() => toggleExpand(entry.id)} style={styles.entryRow}>
+              <View style={{ flex: 1 }}>
+                <Text variant="bodyMedium" style={{ color: colors.text }} numberOfLines={1}>
+                  {entry.nom}
+                </Text>
+                <Text variant="bodySmall" style={{ color: colors.textMuted, marginTop: 2 }}>
+                  {entry.quantite_g} g · {Math.round(entry.calories)} kcal
+                </Text>
+                <View style={styles.entryMacros}>
+                  <Text variant="bodySmall" style={{ color: colors.macroProteine }}>P {entry.proteines}g</Text>
+                  <Text variant="bodySmall" style={{ color: colors.macroGlucide }}>G {entry.glucides}g</Text>
+                  <Text variant="bodySmall" style={{ color: colors.macroLipide }}>L {entry.lipides}g</Text>
+                  <Text variant="bodySmall" style={{ color: colors.textMuted }}>{expanded ? '▲ détails' : '▼ détails'}</Text>
+                </View>
+              </View>
+              <IconButton
+                icon="close"
+                size={18}
+                iconColor={colors.textMuted}
+                onPress={() => handleRemove(entry.id)}
+              />
+            </Pressable>
+            {expanded ? (
+              <View style={styles.entryDetails}>
+                <DetailRow label="Fibres"      value={entry.fibres}      unit="g"  />
+                <DetailRow label="Sucres"      value={entry.sucres}      unit="g"  />
+                <DetailRow label="AG saturés"  value={entry.ags}         unit="g"  />
+                <DetailRow label="Cholestérol" value={entry.cholesterol} unit="mg" />
+                <DetailRow label="Sodium"      value={entry.sodium}      unit="mg" />
+                <DetailRow label="Calcium"     value={entry.calcium}     unit="mg" />
+                <DetailRow label="Fer"         value={entry.fer}         unit="mg" />
+                <DetailRow label="Potassium"   value={entry.potassium}   unit="mg" />
+              </View>
+            ) : null}
           </View>
-          <IconButton
-            icon="close"
-            size={18}
-            iconColor={colors.textMuted}
-            onPress={() => handleRemove(entry.id)}
-          />
-        </View>
-      ))}
+        );
+      })}
 
       {entries.length === 0 && (
         <Pressable onPress={handleAdd} style={styles.emptyState}>
@@ -132,6 +156,20 @@ function MealSection({ meal, entries }: { meal: MealType; entries: JournalEntry[
           </Text>
         </Pressable>
       )}
+    </View>
+  );
+}
+
+// Ligne de detail micro affichee dans le tiroir d'un aliment.
+// Affiche 0 en gris (donnee Ciqual valant 0 = info utile, pas absence).
+function DetailRow({ label, value, unit }: { label: string; value: number | undefined; unit: 'g' | 'mg' }) {
+  if (value === undefined) return null;
+  const display = unit === 'mg' ? Math.round(value) : Math.round(value * 10) / 10;
+  const isZero = value === 0;
+  return (
+    <View style={styles.detailRow}>
+      <Text variant="bodySmall" style={{ color: colors.textMuted }}>{label}</Text>
+      <Text variant="bodySmall" style={{ color: isZero ? colors.textMuted : colors.text }}>{display} {unit}</Text>
     </View>
   );
 }
@@ -190,5 +228,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
     alignItems: 'center',
     marginTop: spacing.sm,
+  },
+  entryDetails: {
+    backgroundColor: palette.primary50 ?? '#f0fdf4',
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+    gap: 6,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
 });

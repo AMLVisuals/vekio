@@ -42,6 +42,14 @@ export default function SearchFoodScreen() {
           proteines: Number(row.proteines_g),
           glucides: Number(row.glucides_g),
           lipides: Number(row.lipides_g),
+          fibres: row.fibres_g != null ? Number(row.fibres_g) : undefined,
+          sucres: row.sucres_g != null ? Number(row.sucres_g) : undefined,
+          ags: row.ags_g != null ? Number(row.ags_g) : undefined,
+          cholesterol: row.cholesterol_mg != null ? Number(row.cholesterol_mg) : undefined,
+          sodium: row.sodium_mg != null ? Number(row.sodium_mg) : undefined,
+          calcium: row.calcium_mg != null ? Number(row.calcium_mg) : undefined,
+          fer: row.fer_mg != null ? Number(row.fer_mg) : undefined,
+          potassium: row.potassium_mg != null ? Number(row.potassium_mg) : undefined,
           image_url: null,
         })));
       }
@@ -64,6 +72,7 @@ export default function SearchFoodScreen() {
   };
 
   const selectFood = (food: NutritionData) => {
+    const optStr = (v: number | undefined): string | undefined => v !== undefined ? String(v) : undefined;
     router.push({
       pathname: '/add-food',
       params: {
@@ -75,6 +84,14 @@ export default function SearchFoodScreen() {
         proteines: String(food.proteines),
         glucides: String(food.glucides),
         lipides: String(food.lipides),
+        fibres: optStr(food.fibres),
+        sucres: optStr(food.sucres),
+        ags: optStr(food.ags),
+        cholesterol: optStr(food.cholesterol),
+        sodium: optStr(food.sodium),
+        calcium: optStr(food.calcium),
+        fer: optStr(food.fer),
+        potassium: optStr(food.potassium),
       },
     });
   };

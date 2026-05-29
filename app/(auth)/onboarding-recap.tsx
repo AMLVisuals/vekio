@@ -53,6 +53,11 @@ export default function OnboardingRecapScreen() {
   const poidsObjectif = params.poids_objectif ? Number(params.poids_objectif) : undefined;
   const intention = (params.intention || undefined) as Intention | undefined;
 
+  // Cycle menstruel (seulement si sexe=femme et activé en E2)
+  const cycleActif = params.cycle_actif === '1';
+  const cycleDernieresRegles = params.cycle_dernieres_regles || null;
+  const cycleDureeJours = params.cycle_duree_jours ? Number(params.cycle_duree_jours) : 28;
+
   const profile: Profile = {
     sexe: params.sexe as Profile['sexe'],
     age: Number(params.age),
@@ -64,6 +69,9 @@ export default function OnboardingRecapScreen() {
     masseGrassePct: masseGrasse,
     poidsObjectif,
     intention,
+    cycleActif,
+    cycleDernieresRegles: cycleDernieresRegles ? new Date(cycleDernieresRegles) : undefined,
+    cycleDureeJours,
   };
 
   const macros = calculateNeeds(profile);
@@ -89,6 +97,9 @@ export default function OnboardingRecapScreen() {
         masse_hydrique_pct: masseHydrique,
         poids_objectif: poidsObjectif ?? null,
         intention: intention ?? null,
+        cycle_actif: cycleActif,
+        cycle_dernieres_regles: cycleDernieresRegles,
+        cycle_duree_jours: cycleDureeJours,
       });
 
       // Premiere pesee = celle de l'inscription, avec composition si renseignee
@@ -135,6 +146,9 @@ export default function OnboardingRecapScreen() {
             )}
             {vitesse && <InfoRow label="Rythme" value={`${vitesse.toString().replace('.', ',')} kg/semaine`} />}
             {intention && <InfoRow label="Intention" value={INTENTION_LABELS[intention] ?? intention} />}
+            {cycleActif && (
+              <InfoRow label="Cycle" value={`Suivi activé · ${cycleDureeJours} j`} />
+            )}
           </Card.Content>
         </Card>
 

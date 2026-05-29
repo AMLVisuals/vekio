@@ -1,16 +1,23 @@
 import type { NutritionData } from './openfoodfacts';
 import ciqualData from './ciqual-data.json';
-import { ALIMENTS_BASE } from './aliments-base';
 
 interface CiqualEntry {
   c: string; // code
   n: string; // nom court (affiche)
   s: string; // texte de recherche elargi (nom original lower-case)
   k: number; // kcal
-  p: number; // proteines
-  g: number; // glucides
-  l: number; // lipides
+  p: number; // proteines (g)
+  g: number; // glucides (g)
+  l: number; // lipides (g)
   t?: number; // 1 = aliment transforme/industriel (penalite de score)
+  fb?: number; // fibres (g)
+  sc?: number; // sucres totaux (g)
+  sa?: number; // AG satures (g)
+  ch?: number; // cholesterol (mg)
+  so?: number; // sodium (mg)
+  ca?: number; // calcium (mg)
+  fe?: number; // fer (mg)
+  po?: number; // potassium (mg)
 }
 
 const data = ciqualData as CiqualEntry[];
@@ -286,12 +293,8 @@ export function searchCiqual(query: string): NutritionData[] {
     scored.push({ item, score: s });
   }
 
-  // 1. Aliments stars (boost massif)
-  for (const a of ALIMENTS_BASE) {
-    consider(a.name, a.name, a, false, true);
-  }
-
-  // 2. Base Ciqual
+  // Base Ciqual uniquement : elle contient maintenant les 8 micros, plus besoin
+  // de la base hardcoded ALIMENTS_BASE (qui creait des doublons sans micros).
   for (const e of data) {
     consider(e.n, e.s, {
       code: e.c,
@@ -302,6 +305,14 @@ export function searchCiqual(query: string): NutritionData[] {
       glucides: e.g,
       lipides: e.l,
       image_url: null,
+      fibres: e.fb,
+      sucres: e.sc,
+      ags: e.sa,
+      cholesterol: e.ch,
+      sodium: e.so,
+      calcium: e.ca,
+      fer: e.fe,
+      potassium: e.po,
     }, e.t === 1, false);
   }
 

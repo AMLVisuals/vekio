@@ -20,6 +20,15 @@ export interface JournalEntry {
   proteines: number;
   glucides: number;
   lipides: number;
+  // Micronutriments (0 si la source ne les fournit pas)
+  fibres: number;
+  sucres: number;
+  ags: number;
+  cholesterol: number;
+  sodium: number;
+  calcium: number;
+  fer: number;
+  potassium: number;
   repas: MealType;
 }
 
@@ -92,6 +101,14 @@ export const useJournalStore = create<JournalState>((set, get) => ({
         proteines: Number(row.proteines_g),
         glucides: Number(row.glucides_g),
         lipides: Number(row.lipides_g),
+        fibres: Number(row.fibres_g ?? 0),
+        sucres: Number(row.sucres_g ?? 0),
+        ags: Number(row.ags_g ?? 0),
+        cholesterol: Number(row.cholesterol_mg ?? 0),
+        sodium: Number(row.sodium_mg ?? 0),
+        calcium: Number(row.calcium_mg ?? 0),
+        fer: Number(row.fer_mg ?? 0),
+        potassium: Number(row.potassium_mg ?? 0),
         repas: row.repas as MealType,
       }));
       set({ entries });
@@ -116,6 +133,14 @@ export const useJournalStore = create<JournalState>((set, get) => ({
       proteines_g: entry.proteines,
       glucides_g: entry.glucides,
       lipides_g: entry.lipides,
+      fibres_g: entry.fibres,
+      sucres_g: entry.sucres,
+      ags_g: entry.ags,
+      cholesterol_mg: entry.cholesterol,
+      sodium_mg: entry.sodium,
+      calcium_mg: entry.calcium,
+      fer_mg: entry.fer,
+      potassium_mg: entry.potassium,
     });
 
     // Mettre a jour les aliments favoris
@@ -140,6 +165,14 @@ export const useJournalStore = create<JournalState>((set, get) => ({
         proteines_g: entry.proteines,
         glucides_g: entry.glucides,
         lipides_g: entry.lipides,
+        fibres_g: entry.fibres,
+        sucres_g: entry.sucres,
+        ags_g: entry.ags,
+        cholesterol_mg: entry.cholesterol,
+        sodium_mg: entry.sodium,
+        calcium_mg: entry.calcium,
+        fer_mg: entry.fer,
+        potassium_mg: entry.potassium,
       });
     }
   },

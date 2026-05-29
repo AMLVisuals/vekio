@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Keyboard, Pressable } from 'react-native';
-import { Text, Card, Button, TextInput, IconButton, useTheme } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, Alert, Keyboard, Pressable, Platform } from 'react-native';
+import { Text, Card, Button, TextInput, IconButton, Switch, useTheme } from 'react-native-paper';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useUserStore } from '../../stores/userStore';
 import { useWeightStore } from '../../stores/weightStore';
 import { supabase } from '../../lib/supabase';
-import type { Intention, Sport, SportType, Frequence } from '../../lib/nutrition';
+import { describePhase, type Intention, type Sport, type SportType, type Frequence, type Profile, type Vitesse } from '../../lib/nutrition';
 import { colors, spacing, radius, shadow } from '../../theme/tokens';
 import { useIntroPopup } from '../../lib/useIntroPopup';
 import IntroModal from '../../components/IntroModal';
@@ -45,13 +46,25 @@ export default function ProfilScreen() {
   const theme = useTheme();
   const profile = useUserStore((s) => s.profile);
   const macros = useUserStore((s) => s.macros);
+  const macrosMode = useUserStore((s) => s.macrosMode);
   const saveProfile = useUserStore((s) => s.saveProfile);
+  const saveMacrosManual = useUserStore((s) => s.saveMacrosManual);
+  const resetMacrosToAuto = useUserStore((s) => s.resetMacrosToAuto);
   const logout = useUserStore((s) => s.logout);
 
   const [editingProfile, setEditingProfile] = useState(false);
   const [editingMacros, setEditingMacros] = useState(false);
   const [editingObjectif, setEditingObjectif] = useState(false);
   const [editingActivites, setEditingActivites] = useState(false);
+  const [editingCycle, setEditingCycle] = useState(false);
+
+  // Etats cycle menstruel (uniquement si sexe = femme)
+  const [cycleActifEdit, setCycleActifEdit] = useState(profile?.cycle_actif ?? false);
+  const [cycleDateEdit, setCycleDateEdit] = useState<Date>(
+    profile?.cycle_dernieres_regles ? new Date(profile.cycle_dernieres_regles) : new Date()
+  );
+  const [cycleDureeEdit, setCycleDureeEdit] = useState(String(profile?.cycle_duree_jours ?? 28));
+  const [showCycleDatePicker, setShowCycleDatePicker] = useState(false);
   const [editSports, setEditSports] = useState<Sport[]>(profile?.sports ?? []);
   const [saving, setSaving] = useState(false);
   const intro = useIntroPopup('profil');
@@ -91,6 +104,9 @@ export default function ProfilScreen() {
         masse_hydrique_pct: profile.masse_hydrique_pct,
         poids_objectif: profile.poids_objectif ?? null,
         intention: profile.intention ?? null,
+        cycle_actif: profile.cycle_actif,
+        cycle_dernieres_regles: profile.cycle_dernieres_regles,
+        cycle_duree_jours: profile.cycle_duree_jours,
       });
       setEditingActivites(false);
     } catch {
@@ -112,11 +128,15 @@ export default function ProfilScreen() {
   const [sansCible, setSansCible] = useState(profile?.poids_objectif === null);
   const [intention, setIntention] = useState<Intention | null>(profile?.intention ?? null);
 
-  // Champs macros custom
-  const [customCal, setCustomCal] = useState(String(macros?.calories ?? ''));
+  // Champs macros custom. Calories calculees en live a partir des 3 macros
+  // (4 kcal/g prot, 4 kcal/g gluc, 9 kcal/g lip). Pas de champ Calories edite.
   const [customProt, setCustomProt] = useState(String(macros?.proteines_g ?? ''));
   const [customGluc, setCustomGluc] = useState(String(macros?.glucides_g ?? ''));
   const [customLip, setCustomLip] = useState(String(macros?.lipides_g ?? ''));
+  const customCalLive =
+    (Number(customProt) || 0) * 4 +
+    (Number(customGluc) || 0) * 4 +
+    (Number(customLip) || 0) * 9;
 
   const handleSaveProfile = async () => {
     if (!nom || !age || !poids || !taille) {
@@ -141,6 +161,9 @@ export default function ProfilScreen() {
         masse_hydrique_pct: profile?.masse_hydrique_pct,
         poids_objectif: profile?.poids_objectif ?? null,
         intention: profile?.intention ?? null,
+        cycle_actif: profile?.cycle_actif,
+        cycle_dernieres_regles: profile?.cycle_dernieres_regles,
+        cycle_duree_jours: profile?.cycle_duree_jours,
       });
 
       // Mettre a jour le poids dans l'historique si change
@@ -151,7 +174,6 @@ export default function ProfilScreen() {
       // Mettre a jour les champs macros avec les nouvelles valeurs calculees
       const newMacros = useUserStore.getState().macros;
       if (newMacros) {
-        setCustomCal(String(newMacros.calories));
         setCustomProt(String(newMacros.proteines_g));
         setCustomGluc(String(newMacros.glucides_g));
         setCustomLip(String(newMacros.lipides_g));
@@ -164,46 +186,47 @@ export default function ProfilScreen() {
     setSaving(false);
   };
 
+  const handleResetMacros = () => {
+    if (!profile) return;
+    Alert.alert(
+      'Recalculer selon mon profil',
+      'Tes objectifs vont être remis aux valeurs calculées par l\'app à partir de ton poids, taille, âge, sexe, sports et objectif. Tes modifications manuelles seront perdues et le mode automatique sera réactivé.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Recalculer',
+          onPress: async () => {
+            setSaving(true);
+            try {
+              const m = await resetMacrosToAuto();
+              setCustomProt(String(m.proteines_g));
+              setCustomGluc(String(m.glucides_g));
+              setCustomLip(String(m.lipides_g));
+              setEditingMacros(false);
+            } catch {
+              Alert.alert('Erreur', 'Impossible de recalculer');
+            }
+            setSaving(false);
+          },
+        },
+      ],
+    );
+  };
+
   const handleSaveMacros = async () => {
-    const cal = Number(customCal);
     const prot = Number(customProt);
     const gluc = Number(customGluc);
     const lip = Number(customLip);
+    const cal = Math.round(prot * 4 + gluc * 4 + lip * 9);
 
-    if (!cal || !prot || !gluc || !lip) {
-      Alert.alert('Erreur', 'Remplis tous les champs');
+    if (!prot || !gluc || !lip) {
+      Alert.alert('Erreur', 'Remplis les trois macros');
       return;
     }
 
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Non connecté');
-
-      await supabase
-        .from('objectifs_macros')
-        .upsert({
-          user_id: user.id,
-          calories: cal,
-          proteines_g: prot,
-          glucides_g: gluc,
-          lipides_g: lip,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id' });
-
-      const currentMacros = useUserStore.getState().macros;
-      useUserStore.getState().setMacros({
-        calories: cal,
-        proteines_g: prot,
-        glucides_g: gluc,
-        lipides_g: lip,
-        bmr: currentMacros?.bmr ?? 0,
-        tdee: currentMacros?.tdee ?? 0,
-        facteurActivite: currentMacros?.facteurActivite ?? 0,
-        calculesSurMasseMaigre: currentMacros?.calculesSurMasseMaigre ?? false,
-        objectifEffectif: currentMacros?.objectifEffectif ?? 'maintien',
-        objectifAtteint: currentMacros?.objectifAtteint ?? false,
-      });
+      await saveMacrosManual({ calories: cal, proteines_g: prot, glucides_g: gluc, lipides_g: lip });
       setEditingMacros(false);
     } catch {
       Alert.alert('Erreur', 'Impossible de sauvegarder');
@@ -247,8 +270,46 @@ export default function ProfilScreen() {
         masse_hydrique_pct: profile.masse_hydrique_pct,
         poids_objectif: sansCible ? null : cibleNum,
         intention,
+        cycle_actif: profile.cycle_actif,
+        cycle_dernieres_regles: profile.cycle_dernieres_regles,
+        cycle_duree_jours: profile.cycle_duree_jours,
       });
       setEditingObjectif(false);
+    } catch {
+      Alert.alert('Erreur', 'Impossible de sauvegarder');
+    }
+    setSaving(false);
+  };
+
+  const handleSaveCycle = async () => {
+    if (!profile) return;
+    const duree = Math.round(Number(cycleDureeEdit));
+    if (cycleActifEdit && (isNaN(duree) || duree < 21 || duree > 40)) {
+      Alert.alert('Erreur', 'La durée du cycle doit être entre 21 et 40 jours.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await saveProfile({
+        nom: profile.nom,
+        age: profile.age,
+        poids: profile.poids,
+        taille: profile.taille,
+        sexe: profile.sexe,
+        objectif: profile.objectif,
+        vitesse_kg_semaine: profile.vitesse_kg_semaine ?? null,
+        date_naissance: profile.date_naissance ?? null,
+        sports: profile.sports,
+        masse_grasse_pct: profile.masse_grasse_pct,
+        masse_musculaire_pct: profile.masse_musculaire_pct,
+        masse_hydrique_pct: profile.masse_hydrique_pct,
+        poids_objectif: profile.poids_objectif ?? null,
+        intention: profile.intention ?? null,
+        cycle_actif: cycleActifEdit,
+        cycle_dernieres_regles: cycleActifEdit ? cycleDateEdit.toISOString().split('T')[0] : null,
+        cycle_duree_jours: cycleActifEdit ? duree : 28,
+      });
+      setEditingCycle(false);
     } catch {
       Alert.alert('Erreur', 'Impossible de sauvegarder');
     }
@@ -500,6 +561,111 @@ export default function ProfilScreen() {
             </Card>
           )}
 
+          {/* Mon cycle (uniquement si sexe = femme) */}
+          {profile?.sexe === 'femme' && (
+            <Card style={styles.card} mode="contained">
+              <Card.Content>
+                <View style={styles.cardHeader}>
+                  <Text variant="titleMedium" style={styles.cardTitle}>Mon cycle</Text>
+                  {!editingCycle && (
+                    <Button compact mode="text" onPress={() => {
+                      setCycleActifEdit(profile.cycle_actif);
+                      setCycleDateEdit(profile.cycle_dernieres_regles ? new Date(profile.cycle_dernieres_regles) : new Date());
+                      setCycleDureeEdit(String(profile.cycle_duree_jours));
+                      setEditingCycle(true);
+                    }}>
+                      Modifier
+                    </Button>
+                  )}
+                </View>
+
+                {editingCycle ? (
+                  <>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 }}>
+                      <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, flex: 1 }}>
+                        Suivre mon cycle
+                      </Text>
+                      <Switch value={cycleActifEdit} onValueChange={setCycleActifEdit} />
+                    </View>
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, fontStyle: 'italic', marginBottom: 12 }}>
+                      En phase lutéale ton métabolisme augmente. On ajoute +150 kcal/j à tes besoins ces jours-là.
+                    </Text>
+
+                    {cycleActifEdit && (
+                      <>
+                        <Text variant="bodySmall" style={[styles.label, { marginTop: 8 }]}>
+                          Date du 1er jour des dernières règles
+                        </Text>
+                        <Pressable
+                          onPress={() => setShowCycleDatePicker(true)}
+                          style={[styles.dateBtn, { borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface }]}
+                        >
+                          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+                            {cycleDateEdit.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                          </Text>
+                        </Pressable>
+                        {showCycleDatePicker && (
+                          <DateTimePicker
+                            value={cycleDateEdit}
+                            mode="date"
+                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                            maximumDate={new Date()}
+                            minimumDate={new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)}
+                            onChange={(e: DateTimePickerEvent, d?: Date) => {
+                              if (Platform.OS === 'android') setShowCycleDatePicker(false);
+                              if (e.type === 'set' && d) setCycleDateEdit(d);
+                            }}
+                            locale="fr-FR"
+                          />
+                        )}
+                        {Platform.OS === 'ios' && showCycleDatePicker && (
+                          <Button mode="text" onPress={() => setShowCycleDatePicker(false)} style={{ alignSelf: 'flex-end' }}>
+                            Valider
+                          </Button>
+                        )}
+
+                        <TextInput
+                          label="Durée moyenne du cycle"
+                          value={cycleDureeEdit}
+                          onChangeText={setCycleDureeEdit}
+                          mode="outlined"
+                          dense
+                          keyboardType="numeric"
+                          right={<TextInput.Affix text="jours" />}
+                          style={[styles.input, { marginTop: 12 }]}
+                          returnKeyType="done"
+                          onSubmitEditing={Keyboard.dismiss}
+                        />
+                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, fontStyle: 'italic' }}>
+                          Entre 21 et 40 jours. Si tu ne sais pas, garde 28 (moyenne).
+                        </Text>
+                      </>
+                    )}
+
+                    <View style={styles.editButtons}>
+                      <Button mode="text" onPress={() => setEditingCycle(false)} style={{ flex: 1 }}>
+                        Annuler
+                      </Button>
+                      <Button mode="contained" onPress={handleSaveCycle} loading={saving} style={{ flex: 1 }}>
+                        Sauvegarder
+                      </Button>
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    {profile.cycle_actif && profile.cycle_dernieres_regles ? (
+                      <CycleInfo profile={profile} />
+                    ) : (
+                      <Text variant="bodyMedium" style={{ color: colors.textMuted }}>
+                        Suivi non activé. Active-le pour adapter tes besoins en phase lutéale.
+                      </Text>
+                    )}
+                  </>
+                )}
+              </Card.Content>
+            </Card>
+          )}
+
           {/* Mes activités sportives */}
           <Card style={styles.card} mode="contained">
             <Card.Content>
@@ -632,24 +798,63 @@ export default function ProfilScreen() {
           <Card style={styles.card} mode="contained">
             <Card.Content>
               <View style={styles.cardHeader}>
-                <Text variant="titleMedium" style={styles.cardTitle}>Objectifs journaliers</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 }}>
+                  <Text variant="titleMedium" style={styles.cardTitle}>Objectifs journaliers</Text>
+                  <View style={{
+                    paddingHorizontal: 8,
+                    paddingVertical: 2,
+                    borderRadius: 999,
+                    backgroundColor: macrosMode === 'auto' ? theme.colors.primaryContainer : theme.colors.surfaceVariant,
+                  }}>
+                    <Text variant="labelSmall" style={{
+                      color: macrosMode === 'auto' ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant,
+                      fontWeight: '600',
+                    }}>
+                      {macrosMode === 'auto' ? 'Auto' : 'Manuel'}
+                    </Text>
+                  </View>
+                </View>
                 {!editingMacros && (
                   <Button compact mode="text" onPress={() => setEditingMacros(true)}>
                     Modifier
                   </Button>
                 )}
               </View>
+              {!editingMacros && (
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, fontStyle: 'italic', marginBottom: 8 }}>
+                  {macrosMode === 'auto'
+                    ? 'Recalculés automatiquement après chaque pesée selon ton profil.'
+                    : 'Valeurs personnalisées — figées jusqu\'à un nouveau recalcul.'}
+                </Text>
+              )}
 
               {editingMacros ? (
                 <>
-                  <TextInput label="Calories" value={customCal} onChangeText={setCustomCal} mode="outlined" dense keyboardType="numeric" right={<TextInput.Affix text="kcal" />} style={styles.input} returnKeyType="done" onSubmitEditing={Keyboard.dismiss} />
                   <TextInput label="Protéines" value={customProt} onChangeText={setCustomProt} mode="outlined" dense keyboardType="numeric" right={<TextInput.Affix text="g" />} style={styles.input} returnKeyType="done" onSubmitEditing={Keyboard.dismiss} />
                   <TextInput label="Glucides" value={customGluc} onChangeText={setCustomGluc} mode="outlined" dense keyboardType="numeric" right={<TextInput.Affix text="g" />} style={styles.input} returnKeyType="done" onSubmitEditing={Keyboard.dismiss} />
                   <TextInput label="Lipides" value={customLip} onChangeText={setCustomLip} mode="outlined" dense keyboardType="numeric" right={<TextInput.Affix text="g" />} style={styles.input} returnKeyType="done" onSubmitEditing={Keyboard.dismiss} />
 
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingVertical: 8, marginBottom: 4 }}>
+                    <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '600' }}>
+                      Calories totales
+                    </Text>
+                    <Text variant="titleLarge" style={{ color: theme.colors.primary, fontWeight: '700' }}>
+                      {customCalLive} kcal
+                    </Text>
+                  </View>
+
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, fontStyle: 'italic', marginBottom: 8 }}>
-                    Modifie ces valeurs si tu veux des objectifs personnalisés. Sinon elles sont calculées automatiquement.
+                    Calories = protéines × 4 + glucides × 4 + lipides × 9. Modifie les macros pour personnaliser tes objectifs.
                   </Text>
+
+                  <Button
+                    mode="outlined"
+                    icon="refresh"
+                    onPress={handleResetMacros}
+                    style={{ marginBottom: 8 }}
+                  >
+                    Recalculer selon mon profil
+                  </Button>
 
                   <View style={styles.editButtons}>
                     <Button mode="text" onPress={() => setEditingMacros(false)} style={{ flex: 1 }}>Annuler</Button>
@@ -713,6 +918,34 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+// Affiche la phase courante et le jour du cycle. Recalcule a la volee depuis
+// la date des dernieres regles. La logique vit dans nutrition.ts via le store
+// (macros.phaseCycle / macros.jourCycle) mais on la duplique ici pour ne pas
+// dependre du dernier recalcul (utile si le user vient juste d'activer).
+function CycleInfo({ profile }: { profile: { sexe: 'homme' | 'femme'; cycle_actif: boolean; cycle_dernieres_regles: string | null; cycle_duree_jours: number } }) {
+  if (!profile.cycle_actif || !profile.cycle_dernieres_regles) return null;
+  const debut = new Date(profile.cycle_dernieres_regles);
+  const duree = profile.cycle_duree_jours;
+  const joursEcoules = Math.floor((Date.now() - debut.getTime()) / (24 * 60 * 60 * 1000));
+  const jourCycle = (joursEcoules % duree) + 1;
+  let phase: 'menstruelle' | 'folliculaire' | 'ovulation' | 'luteale';
+  if (jourCycle <= 5) phase = 'menstruelle';
+  else if (jourCycle >= duree - 13 && jourCycle <= duree - 11) phase = 'ovulation';
+  else if (jourCycle > duree - 11) phase = 'luteale';
+  else phase = 'folliculaire';
+  return (
+    <>
+      <InfoRow label="Phase actuelle" value={describePhase(phase)} />
+      <InfoRow label="Jour" value={`${jourCycle} / ${duree}`} />
+      {phase === 'luteale' && (
+        <Text variant="bodySmall" style={{ color: '#4CAF50', marginTop: 8, fontStyle: 'italic' }}>
+          Phase lutéale : +150 kcal/j appliqués à tes besoins.
+        </Text>
+      )}
+    </>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -756,6 +989,12 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 10,
+  },
+  dateBtn: {
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
   },
   skipLink: {
     textAlign: 'right',

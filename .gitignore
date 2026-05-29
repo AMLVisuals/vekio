@@ -39,3 +39,9 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Local-only files
+expo-qr.png
+lib/ciqual-data.json.before-micros.bak
+lib/ciqual-data.original.json
+scripts/ciqual-source/

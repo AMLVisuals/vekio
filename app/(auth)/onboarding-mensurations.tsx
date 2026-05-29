@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, StyleSheet, Pressable, ScrollView, Platform, Alert } from 'react-native';
-import { Text, TextInput, Button, IconButton, useTheme } from 'react-native-paper';
+import { View, StyleSheet, Pressable, ScrollView, Platform, Alert, KeyboardAvoidingView } from 'react-native';
+import { Text, TextInput, Button, IconButton, Switch, useTheme } from 'react-native-paper';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -29,6 +29,16 @@ export default function OnboardingProfilScreen() {
   const [poidsCible, setPoidsCible] = useState('');
   const [sansCible, setSansCible] = useState(false);
   const [cibleEditeManuellement, setCibleEditeManuellement] = useState(false);
+
+  // Cycle menstruel (n'apparait que si sexe = femme)
+  const [cycleActif, setCycleActif] = useState(false);
+  const [cycleDate, setCycleDate] = useState<Date>(new Date());
+  const [cycleDuree, setCycleDuree] = useState('28');
+  const [showCyclePicker, setShowCyclePicker] = useState(false);
+  const onCycleDateChange = (event: DateTimePickerEvent, selected?: Date) => {
+    if (Platform.OS === 'android') setShowCyclePicker(false);
+    if (event.type === 'set' && selected) setCycleDate(selected);
+  };
 
   const onDateChange = (event: DateTimePickerEvent, selected?: Date) => {
     if (Platform.OS === 'android') setShowDatePicker(false);
@@ -65,10 +75,15 @@ export default function OnboardingProfilScreen() {
       objectif === 'perte' ? cibleN < poidsN : cibleN > poidsN
     ));
 
+  const cycleDureeN = Number(cycleDuree);
+  const cycleValide =
+    sexe !== 'femme' || !cycleActif || (cycleDureeN >= 21 && cycleDureeN <= 40);
+
   const canContinue =
-    nom.trim() && sexe && poidsN > 30 && poidsN < 250 && tailleN > 100 && tailleN < 230 && cibleValide;
+    nom.trim() && sexe && poidsN > 30 && poidsN < 250 && tailleN > 100 && tailleN < 230 && cibleValide && cycleValide;
 
   const handleNext = () => {
+    const cycleActifFinal = sexe === 'femme' && cycleActif;
     router.push({
       pathname: '/(auth)/onboarding-composition',
       params: {
@@ -82,6 +97,9 @@ export default function OnboardingProfilScreen() {
         poids: String(poidsN),
         taille: String(tailleN),
         poids_objectif: needsCible && !sansCible ? String(cibleN) : '',
+        cycle_actif: cycleActifFinal ? '1' : '',
+        cycle_dernieres_regles: cycleActifFinal ? cycleDate.toISOString().split('T')[0] : '',
+        cycle_duree_jours: cycleActifFinal ? String(cycleDureeN) : '',
       },
     });
   };
@@ -91,10 +109,15 @@ export default function OnboardingProfilScreen() {
       <View style={styles.topBar}>
         <IconButton icon="arrow-left" size={24} onPress={() => router.back()} />
       </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.kav}
+      >
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         <Text variant="titleMedium" style={styles.step}>Étape 2/5</Text>
         <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
@@ -269,6 +292,76 @@ export default function OnboardingProfilScreen() {
             )}
           </View>
         )}
+
+        {/* Cycle menstruel — uniquement pour les femmes */}
+        {sexe === 'femme' && (
+          <View style={styles.cibleBlock}>
+            <Text variant="titleMedium" style={[styles.cibleTitle, { color: theme.colors.onBackground }]}>
+              Ton cycle menstruel
+            </Text>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 10 }}>
+              En phase lutéale ton métabolisme augmente. On ajoute +150 kcal/j à tes besoins ces jours-là. Optionnel.
+            </Text>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 }}>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, flex: 1 }}>
+                Suivre mon cycle
+              </Text>
+              <Switch value={cycleActif} onValueChange={setCycleActif} />
+            </View>
+
+            {cycleActif && (
+              <>
+                <Text variant="bodyMedium" style={[styles.label, { color: theme.colors.onSurfaceVariant, marginTop: 8 }]}>
+                  Date du 1er jour des dernières règles
+                </Text>
+                <Pressable
+                  onPress={() => setShowCyclePicker(true)}
+                  style={[styles.dateInput, { borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface }]}
+                >
+                  <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+                    {formatDate(cycleDate)}
+                  </Text>
+                </Pressable>
+
+                {showCyclePicker && (
+                  <DateTimePicker
+                    value={cycleDate}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    maximumDate={new Date()}
+                    minimumDate={new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)}
+                    onChange={onCycleDateChange}
+                    locale="fr-FR"
+                  />
+                )}
+                {Platform.OS === 'ios' && showCyclePicker && (
+                  <Button mode="text" onPress={() => setShowCyclePicker(false)} style={{ alignSelf: 'flex-end' }}>
+                    Valider
+                  </Button>
+                )}
+
+                <TextInput
+                  label="Durée moyenne du cycle (jours)"
+                  value={cycleDuree}
+                  onChangeText={setCycleDuree}
+                  mode="outlined"
+                  keyboardType="numeric"
+                  returnKeyType="done"
+                  style={styles.input}
+                />
+                {!cycleValide && (
+                  <Text variant="bodySmall" style={{ color: theme.colors.error, marginBottom: 8 }}>
+                    La durée doit être entre 21 et 40 jours.
+                  </Text>
+                )}
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, fontStyle: 'italic' }}>
+                  Si tu ne sais pas, garde 28 (moyenne).
+                </Text>
+              </>
+            )}
+          </View>
+        )}
       </ScrollView>
 
       <View style={styles.footer}>
@@ -282,12 +375,14 @@ export default function OnboardingProfilScreen() {
           Suivant
         </Button>
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  kav: { flex: 1 },
   topBar: { paddingHorizontal: 8, paddingTop: 4 },
   content: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 24 },
   step: { opacity: 0.5, marginBottom: 8 },

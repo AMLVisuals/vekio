@@ -15,6 +15,7 @@ export type Vitesse = 0.25 | 0.5 | 0.75;
 export type SportType = 'musculation' | 'cardio' | 'collectif' | 'martial' | 'yoga' | 'autre' | 'aucun';
 export type Frequence = 1 | 2 | 3 | 4 | 5 | 6 | 7; // jours par semaine, valeur exacte
 export type Intention = 'bien_etre' | 'silhouette' | 'tonique';
+export type PhaseCycle = 'menstruelle' | 'folliculaire' | 'ovulation' | 'luteale';
 
 export interface Sport {
   type: SportType;
@@ -32,6 +33,10 @@ export interface Profile {
   masseGrassePct?: number; // optionnel — si dispo via Health/balance
   poidsObjectif?: number;  // kg, optionnel — declenche la bascule auto vers maintien
   intention?: Intention;   // motivation (bien-etre / silhouette / tonique)
+  // Cycle menstruel (uniquement si sexe = femme et utilisatrice a active le suivi)
+  cycleActif?: boolean;
+  cycleDernieresRegles?: Date;
+  cycleDureeJours?: number; // 21-40, defaut 28
 }
 
 export interface MacroObjectifs {
@@ -39,12 +44,25 @@ export interface MacroObjectifs {
   proteines_g: number;
   glucides_g: number;
   lipides_g: number;
+  // Cibles micros journalieres (refs : ANSES 2016, OMS 2012/2015)
+  fibres_g: number;
+  sucres_g: number;       // sucres totaux, < pour reference
+  ags_g: number;          // AG satures, < pour reference
+  cholesterol_mg: number; // reference indicative 300mg
+  sodium_mg: number;      // < pour reference, OMS 2g
+  calcium_mg: number;
+  fer_mg: number;
+  potassium_mg: number;
   bmr: number;                  // pour debug/affichage
   tdee: number;                 // pour debug/affichage
   facteurActivite: number;
   calculesSurMasseMaigre: boolean;
   objectifEffectif: Objectif;   // objectif reellement applique (peut differ de profile.objectif)
   objectifAtteint: boolean;     // true si la cible est atteinte (bascule en maintien auto)
+  // Cycle menstruel — null si non active
+  phaseCycle: PhaseCycle | null;
+  jourCycle: number | null;     // jour courant dans le cycle (1..duree)
+  bonusCalorieLuteale: number;  // +150 kcal applique si phase=luteale, 0 sinon
 }
 
 // Marge de tolerance autour du poids cible avant de basculer en maintien.
@@ -129,6 +147,7 @@ function calcAjustementCalorique(objectif: Objectif, vitesse?: Vitesse): number 
 
 // -----------------------------------------------------------------------------
 // 4. Proteines (g)
+// Refs : ISSN Position Stand 2017 (Jager et al.), Helms et al. 2014 pour le cut
 // -----------------------------------------------------------------------------
 function calcProteines(p: Profile): number {
   const faitMusculation = p.sports.some((s) => s.type === 'musculation' && s.frequence >= 1);
@@ -138,26 +157,119 @@ function calcProteines(p: Profile): number {
   if (p.masseGrassePct !== undefined && p.masseGrassePct > 0 && p.masseGrassePct < 60) {
     const masseMaigre = p.poids * (1 - p.masseGrassePct / 100);
     let coef = 1.8; // maintien
-    if (p.objectif === 'perte') coef = 2.2;
+    if (p.objectif === 'perte') coef = 2.4; // Helms 2014 — cut agressif preserve muscu
     else if (p.objectif === 'prise') coef = 2.4;
     return Math.round((coef + bonusCombine) * masseMaigre);
   }
 
   // Fallback : sur poids total
   let coef = 1.6; // maintien
-  if (p.objectif === 'perte') coef = 2.0;
+  if (p.objectif === 'perte') coef = 2.2; // Helms 2014 sans masse maigre
   else if (p.objectif === 'prise') coef = 2.2;
   return Math.round((coef + bonusCombine) * p.poids);
 }
 
 // -----------------------------------------------------------------------------
 // 5. Lipides (g) — % des calories totales
+// Ref : ANSES 2016 (35-40% AET grand public, 20% mini ISSN pour hormones).
+// On uniformise a 30% — compromis sport / sante hormonale.
 // -----------------------------------------------------------------------------
 function calcLipides(calories: number, p: Profile): number {
-  let pct = 0.28; // maintien / perte moderee
-  if (p.objectif === 'perte' && p.vitesse === 0.75) pct = 0.25;
-  if (p.objectif === 'prise') pct = 0.30;
+  void p;
+  const pct = 0.30;
   return Math.round((calories * pct) / 9);
+}
+
+// -----------------------------------------------------------------------------
+// 5b. Micronutriments — cibles journalieres
+// Refs :
+//   - ANSES 2016 (Actualisation des references nutritionnelles)
+//   - OMS 2012 (sodium <2g), OMS 2015 (sucres libres <10% AET)
+// Le cholesterol est affiche a titre indicatif (300 mg, ancien repere USDA).
+// -----------------------------------------------------------------------------
+interface MicrosCibles {
+  fibres_g: number;
+  sucres_g: number;
+  ags_g: number;
+  cholesterol_mg: number;
+  sodium_mg: number;
+  calcium_mg: number;
+  fer_mg: number;
+  potassium_mg: number;
+}
+
+function calcMicros(p: Profile, calories: number): MicrosCibles {
+  // Fibres : 30 g ANSES, 35 g pour sportif (>= 3 jours / sem cumules)
+  const totalJoursSport = p.sports.reduce((sum, s) => sum + (s.type !== 'aucun' ? s.frequence : 0), 0);
+  const fibres_g = totalJoursSport >= 3 ? 35 : 30;
+
+  // Sucres totaux : OMS <10% AET. Calorie/4 pour passer en g, x 0.10.
+  // Note : OMS cible vraiment "sucres libres", pas totaux, mais on utilise ce
+  // proxy pour l'affichage (le user verra "sucres < cible").
+  const sucres_g = Math.round((calories * 0.10) / 4);
+
+  // AG satures : ANSES <12% AET
+  const ags_g = Math.round((calories * 0.12) / 9);
+
+  // Cholesterol : reference indicative 300 mg (pas de limite ANSES recente)
+  const cholesterol_mg = 300;
+
+  // Sodium : OMS <2000 mg (= 5 g de sel)
+  const sodium_mg = 2000;
+
+  // Calcium : ANSES — 950 mg homme / 1000 mg femme
+  const calcium_mg = p.sexe === 'femme' ? 1000 : 950;
+
+  // Fer : ANSES — 11 mg homme / 16 mg femme (perte menstruelle)
+  const fer_mg = p.sexe === 'femme' ? 16 : 11;
+
+  // Potassium : ANSES 3500 mg
+  const potassium_mg = 3500;
+
+  return { fibres_g, sucres_g, ags_g, cholesterol_mg, sodium_mg, calcium_mg, fer_mg, potassium_mg };
+}
+
+// -----------------------------------------------------------------------------
+// 5c. Cycle menstruel
+// Ref : ACSM/ANSES ne donnent pas de chiffre officiel. Consensus etudes
+// (Solomon 1982, Webb 1986, Howe 1993) : depense en phase luteale +100 a +300
+// kcal/jour selon individus. On applique +150 kcal — milieu de fourchette.
+//
+// Decoupage phases (cycle 28j, ajuste si autre duree) :
+//   - Menstruelle : jours 1 a 5 (regles)
+//   - Folliculaire : jour 6 a (duree - 14)
+//   - Ovulation : jour (duree - 13) a (duree - 11) (3 jours)
+//   - Luteale : jour (duree - 10) a duree
+// -----------------------------------------------------------------------------
+const BONUS_LUTEALE_KCAL = 150;
+
+function calcCycle(p: Profile, now: Date = new Date()): { phase: PhaseCycle | null; jour: number | null; bonus: number } {
+  if (p.sexe !== 'femme' || !p.cycleActif || !p.cycleDernieresRegles) {
+    return { phase: null, jour: null, bonus: 0 };
+  }
+  const duree = p.cycleDureeJours ?? 28;
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const joursEcoules = Math.floor((now.getTime() - p.cycleDernieresRegles.getTime()) / msPerDay);
+  if (joursEcoules < 0) return { phase: null, jour: null, bonus: 0 };
+  const jourCycle = (joursEcoules % duree) + 1; // 1..duree
+
+  let phase: PhaseCycle;
+  if (jourCycle <= 5) phase = 'menstruelle';
+  else if (jourCycle >= duree - 13 && jourCycle <= duree - 11) phase = 'ovulation';
+  else if (jourCycle > duree - 11) phase = 'luteale';
+  else phase = 'folliculaire';
+
+  return { phase, jour: jourCycle, bonus: phase === 'luteale' ? BONUS_LUTEALE_KCAL : 0 };
+}
+
+export function describePhase(phase: PhaseCycle | null): string {
+  switch (phase) {
+    case 'menstruelle': return 'Phase menstruelle';
+    case 'folliculaire': return 'Phase folliculaire';
+    case 'ovulation': return 'Ovulation';
+    case 'luteale': return 'Phase lutéale';
+    default: return '';
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -202,7 +314,10 @@ export function calculateNeeds(p: Profile): MacroObjectifs {
   const bmr = calcBMR(pEff);
   const facteurActivite = calcFacteurActivite(pEff.sports);
   const tdee = bmr * facteurActivite;
-  const calories = Math.round(tdee + calcAjustementCalorique(pEff.objectif, pEff.vitesse));
+  const cycle = calcCycle(pEff);
+  // Bonus luteale ajoute APRES l'ajustement objectif : la depense reelle
+  // augmente, donc en perte le deficit reste constant en valeur absolue.
+  const calories = Math.round(tdee + calcAjustementCalorique(pEff.objectif, pEff.vitesse) + cycle.bonus);
 
   const proteines_g = calcProteines(pEff);
   const lipides_g = calcLipides(calories, pEff);
@@ -213,17 +328,23 @@ export function calculateNeeds(p: Profile): MacroObjectifs {
   const caloriesGlucides = Math.max(0, calories - caloriesProteines - caloriesLipides);
   const glucides_g = Math.round(caloriesGlucides / 4);
 
+  const micros = calcMicros(pEff, calories);
+
   return {
     calories,
     proteines_g,
     glucides_g,
     lipides_g,
+    ...micros,
     bmr: Math.round(bmr),
     tdee: Math.round(tdee),
     facteurActivite: Math.round(facteurActivite * 100) / 100,
     calculesSurMasseMaigre: pEff.masseGrassePct !== undefined && pEff.masseGrassePct > 0 && pEff.masseGrassePct < 60,
     objectifEffectif,
     objectifAtteint,
+    phaseCycle: cycle.phase,
+    jourCycle: cycle.jour,
+    bonusCalorieLuteale: cycle.bonus,
   };
 }
 
