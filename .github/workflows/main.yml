@@ -1,4 +1,4 @@
-  name: Supabase keep-alive
+ name: Supabase keep-alive
 
   on:
     schedule:
@@ -9,16 +9,6 @@
     ping:
       runs-on: ubuntu-latest
       steps:
-        - name: Ping Supabase auth endpoint
-          run: |
-            set -e
-            URL="https://mwbrwppbwucbeardeyyc.supabase.co/auth/v1/health"
-            KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13YnJ3cHBid3VjYmVhcmRleXljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyO
-  DE3ODYsImV4cCI6MjA5Mjg1Nzc4Nn0.KoGgjqsPbzZBgaBMMdFfbE1S1oNaHOmHdkEZyWHQJBs"
-            STATUS=$(curl -s -o response.json -w "%{http_code}" -H "apikey: $KEY" "$URL")
-            echo "HTTP $STATUS"
-            cat response.json
-            if [ "$STATUS" != "200" ]; then
-              echo "::error::Ping failed with HTTP $STATUS"
-              exit 1
-            fi
+        - run: curl -sSf -H "apikey:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13YnJ3cHBid3VjYmVhcmRleXljIiwicm9sZSI6ImFub2
+  4iLCJpYXQiOjE3NzcyODE3ODYsImV4cCI6MjA5Mjg1Nzc4Nn0.KoGgjqsPbzZBgaBMMdFfbE1S1oNaHOmHdkEZyWHQJBs"
+  https://mwbrwppbwucbeardeyyc.supabase.co/auth/v1/health
