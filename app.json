@@ -8,6 +8,16 @@
     "userInterfaceStyle": "automatic",
     "scheme": "vekio",
     "newArchEnabled": true,
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/e8e6e27d-2d41-4bc3-889c-a3e8d3195cc2"
+    },
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -29,7 +39,8 @@
       "edgeToEdgeEnabled": true,
       "package": "com.vekio.app",
       "permissions": [
-        "CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -54,6 +65,13 @@
       "@react-native-community/datetimepicker",
       "expo-font",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e8e6e27d-2d41-4bc3-889c-a3e8d3195cc2"
+      }
+    },
+    "owner": "amlvisuals"
   }
 }

@@ -42,6 +42,7 @@ yarn-error.*
 
 # Local-only files
 expo-qr.png
+expo-qr-beta.png
 lib/ciqual-data.json.before-micros.bak
 lib/ciqual-data.original.json
 scripts/ciqual-source/
