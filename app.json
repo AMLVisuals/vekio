@@ -39,8 +39,7 @@
       "edgeToEdgeEnabled": true,
       "package": "com.vekio.app",
       "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.CAMERA"
       ]
     },
     "web": {
@@ -52,7 +51,8 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Vekio utilise la caméra pour scanner les codes-barres."
+          "cameraPermission": "Vekio utilise la caméra pour scanner les codes-barres.",
+          "recordAudioAndroid": false
         }
       ],
       [
