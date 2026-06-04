@@ -48,11 +48,21 @@ function offMicros(n: any): Partial<NutritionData> {
 
 export async function getProductByBarcode(barcode: string): Promise<NutritionData | null> {
   try {
-    // API v2 (la v0 est depreciee). fields= limite la reponse aux champs utiles.
-    const response = await fetch(
-      `${BASE_URL}/api/v2/product/${barcode}.json?fields=${PRODUCT_FIELDS}`,
-      { headers: OFF_HEADERS }
-    );
+    // Timeout 8 s : si OFF ne repond pas (reseau lent / coupure), on abandonne et
+    // on enchaine sur les bases de repli, plutot que de laisser le scanner figé sur
+    // le spinner indefiniment.
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    let response: Response;
+    try {
+      // API v2 (la v0 est depreciee). fields= limite la reponse aux champs utiles.
+      response = await fetch(
+        `${BASE_URL}/api/v2/product/${barcode}.json?fields=${PRODUCT_FIELDS}`,
+        { headers: OFF_HEADERS, signal: ctrl.signal }
+      );
+    } finally {
+      clearTimeout(timer);
+    }
     if (!response.ok) return null;
 
     const data = await response.json();

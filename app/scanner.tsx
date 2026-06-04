@@ -16,6 +16,8 @@ export default function ScannerScreen() {
   // Code-barres non trouve : on garde le code pour proposer la saisie manuelle.
   const [notFoundCode, setNotFoundCode] = useState('');
   const scannedRef = useRef(false);
+  // Horodatage du dernier scan traite, pour throttler (voir handleBarCodeScanned).
+  const lastScanRef = useRef(0);
 
   const goToAddFood = (product: NutritionData) => {
     const optStr = (v: number | undefined): string | undefined => v !== undefined ? String(v) : undefined;
@@ -44,6 +46,13 @@ export default function ScannerScreen() {
 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
     if (scannedRef.current || loading) return;
+    // Throttle : quand un code-barres reste dans le cadre, expo-camera rappelle
+    // cette fonction a chaque image (60 fps) -> le thread JS sature et les boutons
+    // de l'overlay (dont Retour) ne repondent plus. On ignore les declenchements
+    // rapproches : un seul scan est traite par fenetre de 1,5 s.
+    const now = Date.now();
+    if (now - lastScanRef.current < 1500) return;
+    lastScanRef.current = now;
     scannedRef.current = true;
     setLoading(true);
     setNotFoundCode('');
@@ -185,6 +194,10 @@ const styles = StyleSheet.create({
   backButton: {
     alignSelf: 'flex-start',
     margin: 16,
+    // Garantit que le bouton passe au-dessus de la surface camera native (sinon,
+    // sur certains appareils, la camera capte le tap et Retour semble inerte).
+    zIndex: 10,
+    elevation: 10,
   },
   scanArea: {
     alignItems: 'center',
