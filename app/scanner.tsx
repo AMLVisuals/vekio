@@ -4,52 +4,79 @@ import { Text, Button, ActivityIndicator, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router, useLocalSearchParams } from 'expo-router';
-import { getProductByBarcode } from '../lib/openfoodfacts';
+import { getProductByBarcode, type NutritionData } from '../lib/openfoodfacts';
+import { getPersonalProduct } from '../lib/personalProducts';
+import { getCommunityProduct } from '../lib/communityProducts';
 
 export default function ScannerScreen() {
   const theme = useTheme();
   const params = useLocalSearchParams<{ meal: string }>();
   const [permission, requestPermission] = useCameraPermissions();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  // Code-barres non trouve : on garde le code pour proposer la saisie manuelle.
+  const [notFoundCode, setNotFoundCode] = useState('');
   const scannedRef = useRef(false);
+
+  const goToAddFood = (product: NutritionData) => {
+    const optStr = (v: number | undefined): string | undefined => v !== undefined ? String(v) : undefined;
+    router.replace({
+      pathname: '/add-food',
+      params: {
+        meal: params.meal,
+        code: product.code,
+        name: product.name,
+        brand: product.brand,
+        calories: String(product.calories),
+        proteines: String(product.proteines),
+        glucides: String(product.glucides),
+        lipides: String(product.lipides),
+        fibres: optStr(product.fibres),
+        sucres: optStr(product.sucres),
+        ags: optStr(product.ags),
+        cholesterol: optStr(product.cholesterol),
+        sodium: optStr(product.sodium),
+        calcium: optStr(product.calcium),
+        fer: optStr(product.fer),
+        potassium: optStr(product.potassium),
+      },
+    });
+  };
 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
     if (scannedRef.current || loading) return;
     scannedRef.current = true;
     setLoading(true);
-    setError('');
+    setNotFoundCode('');
 
-    const product = await getProductByBarcode(data);
+    // Chaine de repli, dans l'ordre :
+    // 1. Open Food Facts (base publique mondiale).
+    // 2. Mes produits perso (saisies a la main, exactes pour moi).
+    // 3. Base communautaire (saisies partagees par les autres users Vekio).
+    // (FatSecret s'intercalera apres OFF quand l'offre Premier sera active.)
+    const product =
+      (await getProductByBarcode(data)) ??
+      (await getPersonalProduct(data)) ??
+      (await getCommunityProduct(data));
 
     if (product) {
-      const optStr = (v: number | undefined): string | undefined => v !== undefined ? String(v) : undefined;
-      router.replace({
-        pathname: '/add-food',
-        params: {
-          meal: params.meal,
-          code: product.code,
-          name: product.name,
-          brand: product.brand,
-          calories: String(product.calories),
-          proteines: String(product.proteines),
-          glucides: String(product.glucides),
-          lipides: String(product.lipides),
-          fibres: optStr(product.fibres),
-          sucres: optStr(product.sucres),
-          ags: optStr(product.ags),
-          cholesterol: optStr(product.cholesterol),
-          sodium: optStr(product.sodium),
-          calcium: optStr(product.calcium),
-          fer: optStr(product.fer),
-          potassium: optStr(product.potassium),
-        },
-      });
+      goToAddFood(product);
     } else {
-      setError('Produit non trouvé dans la base Open Food Facts');
+      setNotFoundCode(data);
       setLoading(false);
       scannedRef.current = false;
     }
+  };
+
+  const handleManualEntry = () => {
+    router.replace({
+      pathname: '/add-manual',
+      params: { meal: params.meal, code: notFoundCode },
+    });
+  };
+
+  const handleRetry = () => {
+    setNotFoundCode('');
+    scannedRef.current = false;
   };
 
   if (!permission) {
@@ -81,7 +108,10 @@ export default function ScannerScreen() {
       <CameraView
         style={StyleSheet.absoluteFillObject}
         barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'] }}
-        onBarcodeScanned={handleBarCodeScanned}
+        // On coupe la detection des qu'un resultat est en cours (loading) ou
+        // affiche (notFoundCode) : sinon la camera mitraille des evenements en
+        // boucle et sature le thread JS -> les boutons (Retour) deviennent laggy.
+        onBarcodeScanned={loading || notFoundCode ? undefined : handleBarCodeScanned}
       />
 
       <SafeAreaView style={styles.overlay}>
@@ -101,8 +131,32 @@ export default function ScannerScreen() {
         <View style={styles.bottom}>
           {loading ? (
             <ActivityIndicator color="#fff" />
-          ) : error ? (
-            <Text variant="bodyLarge" style={styles.errorText}>{error}</Text>
+          ) : notFoundCode ? (
+            <View style={styles.notFoundBox}>
+              <Text variant="bodyLarge" style={styles.errorText}>
+                Produit introuvable dans Open Food Facts
+              </Text>
+              <Text variant="bodySmall" style={styles.hintText}>
+                Tu peux le saisir à la main : ce sera mémorisé pour tes prochains scans.
+              </Text>
+              <Button
+                icon="pencil-plus"
+                mode="contained"
+                onPress={handleManualEntry}
+                style={{ marginTop: 16, alignSelf: 'stretch' }}
+              >
+                Saisir manuellement
+              </Button>
+              <Button
+                icon="barcode-scan"
+                mode="text"
+                textColor="#fff"
+                onPress={handleRetry}
+                style={{ marginTop: 4 }}
+              >
+                Scanner un autre produit
+              </Button>
+            </View>
           ) : (
             <Text variant="bodyLarge" style={styles.hintText}>
               Scanne le code-barres d'un produit
@@ -145,6 +199,11 @@ const styles = StyleSheet.create({
   bottom: {
     alignItems: 'center',
     paddingBottom: 40,
+    paddingHorizontal: 24,
+  },
+  notFoundBox: {
+    alignItems: 'center',
+    alignSelf: 'stretch',
   },
   hintText: {
     color: '#fff',

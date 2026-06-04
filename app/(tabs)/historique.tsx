@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, SegmentedButtons, Card, useTheme, Button, IconButton } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
-import Svg, { Rect, Line } from 'react-native-svg';
+import Svg, { Rect, Line, Polyline, Circle } from 'react-native-svg';
 import { colors, spacing, radius, shadow, palette } from '../../theme/tokens';
 import { supabase } from '../../lib/supabase';
 import { useUserStore } from '../../stores/userStore';
@@ -47,6 +47,7 @@ export default function HistoriqueScreen() {
   const [view, setView] = useState('semaine');
   const [data, setData] = useState<DayData[]>([]);
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
+  const [selectedWeighIdx, setSelectedWeighIdx] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
 
   // Pop-up d'introduction via hook reutilisable. Selecteurs jour/heure
@@ -204,6 +205,32 @@ export default function HistoriqueScreen() {
               )}
             </View>
 
+            {history.length >= 2 && (
+              <View style={styles.trendRow}>
+                <Text variant="titleMedium" style={{ fontWeight: '600', color: ecartColor }}>
+                  {ecart > 0 ? '↗' : ecart < 0 ? '↘' : '→'} {ecart > 0 ? 'Prise de poids' : ecart < 0 ? 'Perte de poids' : 'Stable'}
+                </Text>
+                <Text variant="titleMedium" style={{ fontWeight: 'bold', color: ecartColor }}>
+                  {ecartLabel} kg
+                </Text>
+              </View>
+            )}
+
+            {/* Courbe d'evolution du poids + detail au tap sur un point */}
+            <WeightChart
+              history={history}
+              objectif={poidsObjectif}
+              selectedIndex={selectedWeighIdx}
+              onSelectPoint={(i) => setSelectedWeighIdx(i === selectedWeighIdx ? null : i)}
+            />
+            {selectedWeighIdx !== null && history[selectedWeighIdx] ? (
+              <WeighDetail entry={history[selectedWeighIdx]} taille={profile?.taille} />
+            ) : history.length >= 2 ? (
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center', marginTop: 6 }}>
+                Touche un point pour voir le détail
+              </Text>
+            ) : null}
+
             {poidsObjectif !== null && poidsObjectif !== undefined && (
               <View style={styles.progressBlock}>
                 <View style={[styles.progressBar, { backgroundColor: theme.colors.surfaceVariant }]}>
@@ -231,6 +258,15 @@ export default function HistoriqueScreen() {
               style={styles.addBtn}
             >
               Ajouter une pesée
+            </Button>
+            <Button
+              mode="text"
+              icon="format-list-bulleted"
+              onPress={() => router.push('/pesees')}
+              compact
+              style={styles.importLink}
+            >
+              Voir toutes mes pesées
             </Button>
             <Button
               mode="text"
@@ -448,6 +484,168 @@ function CalorieChart({ data, target, onSelectDay }: { data: DayData[]; target: 
   );
 }
 
+function WeightChart({ history, objectif, selectedIndex, onSelectPoint }: {
+  history: { date: string; poids_kg: number }[];
+  objectif?: number | null;
+  selectedIndex: number | null;
+  onSelectPoint: (i: number) => void;
+}) {
+  const theme = useTheme();
+  const chartWidth = 300;
+  const chartHeight = 160;
+  const padding = 28;
+
+  // Il faut au moins 2 pesees pour tracer une courbe.
+  if (history.length < 2) {
+    return (
+      <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
+          {history.length === 0
+            ? 'Ajoute des pesées pour voir ta courbe.'
+            : 'Ajoute une 2e pesée pour afficher ta courbe.'}
+        </Text>
+      </View>
+    );
+  }
+
+  const poids = history.map((h) => h.poids_kg);
+  // On inclut l'objectif dans l'echelle pour qu'il reste visible sur le graphe.
+  const values = objectif != null ? [...poids, objectif] : poids;
+  const minV = Math.min(...values);
+  const maxV = Math.max(...values);
+  const span = (maxV - minV) || 1;
+  const yMin = minV - span * 0.15;
+  const yMax = maxV + span * 0.15;
+  const ySpan = (yMax - yMin) || 1;
+
+  const innerW = chartWidth - padding * 2;
+  const innerH = chartHeight - padding * 2;
+  // Points espaces regulierement par index (1 pesee = 1 point).
+  const px = (i: number) => padding + (i / (history.length - 1)) * innerW;
+  const py = (v: number) => padding + (1 - (v - yMin) / ySpan) * innerH;
+
+  const linePoints = history.map((h, i) => `${px(i)},${py(h.poids_kg)}`).join(' ');
+  const showDots = history.length <= 20;
+
+  return (
+    <View style={{ alignItems: 'center', marginTop: 8 }}>
+      <Svg width={chartWidth} height={chartHeight}>
+        {objectif != null && (
+          <Line
+            x1={padding}
+            y1={py(objectif)}
+            x2={chartWidth - padding}
+            y2={py(objectif)}
+            stroke="#4CAF50"
+            strokeWidth={1}
+            strokeDasharray="4,4"
+          />
+        )}
+        {/* Guide verticale sur le point selectionne */}
+        {selectedIndex !== null && history[selectedIndex] && (
+          <Line
+            x1={px(selectedIndex)}
+            y1={padding}
+            x2={px(selectedIndex)}
+            y2={chartHeight - padding}
+            stroke={theme.colors.outline}
+            strokeWidth={1}
+            strokeDasharray="3,3"
+          />
+        )}
+        <Polyline points={linePoints} fill="none" stroke={theme.colors.primary} strokeWidth={2} />
+        {history.map((h, i) => {
+          const selected = i === selectedIndex;
+          if (!showDots && !selected) return null;
+          return (
+            <Circle
+              key={`dot-${i}`}
+              cx={px(i)}
+              cy={py(h.poids_kg)}
+              r={selected ? 5 : 3}
+              fill={theme.colors.primary}
+              stroke="#ffffff"
+              strokeWidth={selected ? 2 : 0}
+            />
+          );
+        })}
+        {/* Zones de tap invisibles (larges) pour selectionner facilement un point */}
+        {history.map((h, i) => (
+          <Circle
+            key={`tap-${i}`}
+            cx={px(i)}
+            cy={py(h.poids_kg)}
+            r={16}
+            fill="transparent"
+            onPress={() => onSelectPoint(i)}
+          />
+        ))}
+      </Svg>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: chartWidth, paddingHorizontal: padding }}>
+        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+          {new Date(history[0].date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+        </Text>
+        {objectif != null && (
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.6 }}>
+            cible {objectif.toFixed(1)} kg
+          </Text>
+        )}
+        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+          {new Date(history[history.length - 1].date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function WeighDetail({ entry, taille }: {
+  entry: { date: string; poids_kg: number; masse_grasse_pct?: number; masse_musculaire_pct?: number; masse_hydrique_pct?: number };
+  taille?: number;
+}) {
+  const theme = useTheme();
+  const imc = taille ? entry.poids_kg / Math.pow(taille / 100, 2) : null;
+  const hasCompo =
+    entry.masse_grasse_pct !== undefined ||
+    entry.masse_musculaire_pct !== undefined ||
+    entry.masse_hydrique_pct !== undefined;
+  return (
+    <View style={[styles.weighDetail, { backgroundColor: theme.colors.surfaceVariant }]}>
+      <View style={styles.weighDetailTop}>
+        <View style={{ flex: 1 }}>
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+            {new Date(entry.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </Text>
+          <Text variant="headlineSmall" style={{ fontWeight: 'bold', color: theme.colors.primary }}>
+            {entry.poids_kg.toFixed(1)} kg
+          </Text>
+        </View>
+        {imc !== null && (
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>IMC</Text>
+            <Text variant="titleMedium" style={{ fontWeight: '600' }}>{imc.toFixed(1)}</Text>
+          </View>
+        )}
+      </View>
+      {hasCompo && (
+        <View style={styles.weighDetailCompo}>
+          {entry.masse_grasse_pct !== undefined && <CompoTag label="Grasse" value={entry.masse_grasse_pct} color="#FF9800" />}
+          {entry.masse_musculaire_pct !== undefined && <CompoTag label="Muscle" value={entry.masse_musculaire_pct} color="#4CAF50" />}
+          {entry.masse_hydrique_pct !== undefined && <CompoTag label="Eau" value={entry.masse_hydrique_pct} color="#2196F3" />}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function CompoTag({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} />
+      <Text variant="bodySmall">{label} {value}%</Text>
+    </View>
+  );
+}
+
 function MacroChart({ data }: { data: DayData[] }) {
   const theme = useTheme();
   const filled = data.filter((d) => d.entries.length > 0);
@@ -529,6 +727,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 4,
   },
+  trendRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
+  weighDetail: { borderRadius: 12, padding: 12, marginTop: 10 },
+  weighDetailTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  weighDetailCompo: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginTop: 10 },
 
   modal: {
     margin: 16,

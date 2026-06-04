@@ -31,6 +31,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
         <Stack.Screen name="search-food" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="add-food" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="add-manual" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="scanner" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="create-menu" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="share-menu" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />

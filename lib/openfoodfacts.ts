@@ -1,5 +1,13 @@
 const BASE_URL = 'https://world.openfoodfacts.org';
 
+// Open Food Facts demande un User-Agent identifiant l'app (sinon throttling /
+// requetes potentiellement filtrees). cf. https://world.openfoodfacts.org/api
+const OFF_HEADERS = { 'User-Agent': 'Vekio/1.0 (contact: berki.adam@outlook.fr)' };
+
+// Champs demandes a l'API v2 : limite la taille de reponse et accelere le scan.
+const PRODUCT_FIELDS =
+  'code,product_name,product_name_fr,brands,image_front_small_url,nutriments';
+
 export interface NutritionData {
   code: string;
   name: string;
@@ -40,7 +48,11 @@ function offMicros(n: any): Partial<NutritionData> {
 
 export async function getProductByBarcode(barcode: string): Promise<NutritionData | null> {
   try {
-    const response = await fetch(`${BASE_URL}/api/v0/product/${barcode}.json`);
+    // API v2 (la v0 est depreciee). fields= limite la reponse aux champs utiles.
+    const response = await fetch(
+      `${BASE_URL}/api/v2/product/${barcode}.json?fields=${PRODUCT_FIELDS}`,
+      { headers: OFF_HEADERS }
+    );
     if (!response.ok) return null;
 
     const data = await response.json();
@@ -68,7 +80,8 @@ export async function getProductByBarcode(barcode: string): Promise<NutritionDat
 export async function searchProducts(query: string, page: number = 1): Promise<NutritionData[]> {
   try {
     const response = await fetch(
-      `${BASE_URL}/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page=${page}&page_size=20&lc=fr&cc=fr`
+      `${BASE_URL}/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page=${page}&page_size=20&lc=fr&cc=fr`,
+      { headers: OFF_HEADERS }
     );
     if (!response.ok) return [];
 

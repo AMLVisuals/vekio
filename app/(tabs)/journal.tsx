@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { Text, IconButton } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,39 +8,45 @@ import { useUserStore } from '../../stores/userStore';
 import { colors, spacing, radius, shadow, palette } from '../../theme/tokens';
 import { haptic } from '../../lib/haptics';
 import { useIntroPopup } from '../../lib/useIntroPopup';
+import { useDailyRefresh } from '../../lib/useDailyRefresh';
 import IntroModal from '../../components/IntroModal';
+import DaySelector from '../../components/DaySelector';
 
 const MEALS: MealType[] = ['petit_dejeuner', 'dejeuner', 'diner', 'collation'];
 
 export default function JournalScreen() {
-  const { entries, loadFromSupabase } = useJournalStore();
+  const { entries, loadFromSupabase, goToToday, isToday } = useJournalStore();
   const macros = useUserStore((s) => s.macros);
   const intro = useIntroPopup('journal');
 
-  useEffect(() => {
-    loadFromSupabase();
-  }, []);
+  // Au focus : recharge le jour affiche (on conserve la navigation).
+  // Au retour au premier plan : on revient « aujourd'hui », comme MyFitnessPal.
+  useDailyRefresh(loadFromSupabase, goToToday);
 
   const totalCal = entries.reduce((sum, e) => sum + e.calories, 0);
+  const viewingToday = isToday();
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Bouton info en haut a droite */}
+        {/* Navigation par jour (facon MyFitnessPal) + bouton info a droite */}
         <View style={styles.topBar}>
-          <View style={{ flex: 1 }} />
-          <IconButton
-            icon="information-outline"
-            size={22}
-            iconColor={colors.textMuted}
-            onPress={intro.open}
-            style={{ margin: 0 }}
-          />
+          <View style={styles.topSide} />
+          <DaySelector />
+          <View style={[styles.topSide, { alignItems: 'flex-end' }]}>
+            <IconButton
+              icon="information-outline"
+              size={22}
+              iconColor={colors.textMuted}
+              onPress={intro.open}
+              style={{ margin: 0 }}
+            />
+          </View>
         </View>
 
         {/* Mini-rappel discret : repere d'orientation, pas de duplication d'anneau */}
         <Text variant="bodyMedium" style={styles.miniSummary}>
-          Aujourd'hui · {Math.round(totalCal)}{macros ? ` / ${macros.calories}` : ''} kcal
+          {viewingToday ? "Aujourd'hui" : 'Ce jour'} · {Math.round(totalCal)}{macros ? ` / ${macros.calories}` : ''} kcal
         </Text>
 
         {MEALS.map((meal) => (
@@ -185,7 +191,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: -spacing.sm,
-    marginRight: -spacing.sm,
+  },
+  topSide: {
+    flex: 1,
+    justifyContent: 'center',
   },
   miniSummary: {
     color: colors.textMuted,

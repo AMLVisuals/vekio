@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, Keyboard } from 'react-native';
 import { Text, Portal, Modal, TextInput, Button, IconButton, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import { colors, spacing, radius, palette } from '../../theme/tokens';
 import { describePhase } from '../../lib/nutrition';
 import { haptic } from '../../lib/haptics';
 import { useIntroPopup } from '../../lib/useIntroPopup';
+import { useDailyRefresh } from '../../lib/useDailyRefresh';
 import DualGauge from '../../components/DualGauge';
 import IntroModal from '../../components/IntroModal';
 
@@ -22,7 +23,8 @@ function getProgressColor(ratio: number): string {
 
 export default function DashboardScreen() {
   const theme = useTheme();
-  const { entries, loadFromSupabase } = useJournalStore();
+  const entries = useJournalStore((s) => s.entries);
+  const goToToday = useJournalStore((s) => s.goToToday);
   const profile = useUserStore((s) => s.profile);
   const macros = useUserStore((s) => s.macros);
   const { totalMl, objectifMl, loadToday, addWater, removeWater } = useHydratationStore();
@@ -32,10 +34,13 @@ export default function DashboardScreen() {
 
   const intro = useIntroPopup('dashboard');
 
-  useEffect(() => {
-    loadFromSupabase();
+  // Le dashboard reste toujours cale sur aujourd'hui (calories + eau + macros
+  // coherents). On force donc « aujourd'hui » au focus et au retour de veille
+  // — meme si le Journal est en train de naviguer dans les jours passes.
+  useDailyRefresh(() => {
+    goToToday();
     loadToday();
-  }, []);
+  });
 
   const totalCal = entries.reduce((sum, e) => sum + e.calories, 0);
   const totalProt = entries.reduce((sum, e) => sum + e.proteines, 0);

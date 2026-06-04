@@ -37,6 +37,9 @@ interface JournalState {
   entries: JournalEntry[];
   isLoading: boolean;
   setDate: (date: string) => void;
+  goToToday: () => void;
+  shiftDay: (delta: number) => void;
+  isToday: () => boolean;
   addEntry: (entry: JournalEntry) => void;
   removeEntry: (id: string) => void;
   loadFromCache: (date: string) => void;
@@ -45,8 +48,17 @@ interface JournalState {
   deleteFromSupabase: (id: string) => Promise<void>;
 }
 
-function todayString(): string {
+// Date du jour au format "YYYY-MM-DD".
+export function todayString(): string {
   return new Date().toISOString().split('T')[0];
+}
+
+// Decale une date "YYYY-MM-DD" de `delta` jours, sans glissement de fuseau
+// (on raisonne en UTC, la meme base que todayString).
+export function addDaysISO(dateStr: string, delta: number): string {
+  const d = new Date(dateStr + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + delta);
+  return d.toISOString().split('T')[0];
 }
 
 export const useJournalStore = create<JournalState>((set, get) => ({
@@ -55,10 +67,31 @@ export const useJournalStore = create<JournalState>((set, get) => ({
   isLoading: false,
 
   setDate: (date) => {
-    set({ date });
+    // On vide les entrees affichees le temps du chargement de la nouvelle
+    // journee, pour ne jamais melanger deux jours a l'ecran.
+    set({ date, entries: [] });
     get().loadFromCache(date);
     get().loadFromSupabase();
   },
+
+  // Revient a la journee en cours. Indispensable car le store est cree une
+  // seule fois au lancement : si l'app reste ouverte (ou en arriere-plan)
+  // jusqu'au lendemain, `date` resterait figee sur hier.
+  goToToday: () => {
+    const today = todayString();
+    if (get().date !== today) get().setDate(today);
+    else get().loadFromSupabase();
+  },
+
+  // Navigue de `delta` jours (ex: -1 = veille, +1 = lendemain). On n'autorise
+  // jamais d'aller dans le futur.
+  shiftDay: (delta) => {
+    const target = addDaysISO(get().date, delta);
+    if (target > todayString()) return;
+    get().setDate(target);
+  },
+
+  isToday: () => get().date === todayString(),
 
   addEntry: (entry) => {
     const newEntries = [...get().entries, entry];
@@ -81,6 +114,7 @@ export const useJournalStore = create<JournalState>((set, get) => ({
 
   loadFromSupabase: async () => {
     set({ isLoading: true });
+    const date = get().date;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { set({ isLoading: false }); return; }
 
@@ -88,7 +122,7 @@ export const useJournalStore = create<JournalState>((set, get) => ({
       .from('journal')
       .select('*')
       .eq('user_id', user.id)
-      .eq('date', get().date)
+      .eq('date', date)
       .order('created_at', { ascending: true });
 
     if (data) {
@@ -111,17 +145,21 @@ export const useJournalStore = create<JournalState>((set, get) => ({
         potassium: Number(row.potassium_mg ?? 0),
         repas: row.repas as MealType,
       }));
-      set({ entries });
-      cacheSet(journalCacheKey(get().date), entries);
+      // Si l'utilisateur a change de jour pendant la requete, on ignore cette
+      // reponse (elle concerne un autre jour) pour ne pas melanger les ecrans.
+      if (get().date === date) {
+        set({ entries });
+        cacheSet(journalCacheKey(date), entries);
+      }
     }
-    set({ isLoading: false });
+    if (get().date === date) set({ isLoading: false });
   },
 
   syncEntryToSupabase: async (entry) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    await supabase.from('journal').insert({
+    const { error: jErr } = await supabase.from('journal').insert({
       id: entry.id,
       user_id: user.id,
       date: get().date,
@@ -142,6 +180,8 @@ export const useJournalStore = create<JournalState>((set, get) => ({
       fer_mg: entry.fer,
       potassium_mg: entry.potassium,
     });
+    // Si l'enregistrement echoue, on le log (sans popup, sans bloquer l'UI).
+    if (jErr) console.error('journal insert error', jErr);
 
     // Mettre a jour les aliments favoris
     const { data: existing } = await supabase
